@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation & Diagnostics - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-cpu text-primary"></i> Machine Learning Model Diagnostics{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  {% if is_missing %}
+  <div class="alert alert-warning shadow-sm border-warning p-4 rounded-3 mb-4" role="alert">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-exclamation-triangle-fill fs-1 text-warning"></i>
+      <div>
+        <h4 class="alert-heading fw-bold mb-1">Model Evaluation Artifacts Missing</h4>
+        <p class="mb-2">The model metrics report has not been generated yet. Please run the training pipeline to produce evaluation figures and performance metrics.</p>
+        <code>python scripts/train_model.py</code>
+      </div>
+    </div>
+  </div>
+  {% else %}
+
+  <!-- Top Hero Card: Champion Model Summary -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" 
+       style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff;">
+    <div class="card-body p-4">
+      <div class="row align-items-center g-3">
+        <div class="col-lg-8">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small mb-2">
+            <i class="bi bi-award-fill"></i> Selected Champion Classifier
+          </div>
+          <h2 class="display-6 fw-bold mb-2 text-white">
+            {{ metrics.champion_model }}
+          </h2>
+          <p class="text-light text-opacity-75 small mb-0" style="max-width: 640px;">
+            Selected over Logistic Regression and HistGradientBoosting by achieving superior Precision-Recall AUC (<strong>{{ "%.4f"|format(metrics.cross_validation_comparison[metrics.champion_model].val_pr_auc) }}</strong>) on the 15.5% purchasing minority class during 5-Fold Stratified Cross-Validation.
+          </p>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="p-3 bg-white bg-opacity-10 border border-white border-opacity-15 rounded-3">
+            <div class="small text-uppercase fw-bold text-info mb-2">Hold-Out Test Set Performance</div>
+            {% set best_test = metrics.test_evaluations[metrics.champion_model] %}
+            <div class="row g-2 text-center">
+              <div class="col-4">
+                <div class="p-1 border border-white border-opacity-10 rounded">
+                  <div class="small text-light text-opacity-75" style="font-size: 0.7rem;">ROC-AUC</div>
+                  <div class="h5 fw-bold text-white mb-0">{{ "%.3f"|format(best_test.roc_auc) }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-1 border border-white border-opacity-10 rounded">
+                  <div class="small text-light text-opacity-75" style="font-size: 0.7rem;">PR-AUC</div>
+                  <div class="h5 fw-bold text-info mb-0">{{ "%.3f"|format(best_test.pr_auc) }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-1 border border-white border-opacity-10 rounded">
+                  <div class="small text-light text-opacity-75" style="font-size: 0.7rem;">Recall</div>
+                  <div class="h5 fw-bold text-success mb-0">{{ "%.1f"|format(best_test.recall * 100) }}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Samples & Partition Metadata -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Raw Sessions</span>
+          <div class="stat-icon slate"><i class="bi bi-database"></i></div>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(metrics.sample_counts.raw_dataset_rows) }}</div>
+        <p class="stat-subtext">{{ metrics.sample_counts.duplicates_removed }} duplicates dropped ({{ "{:,}".format(metrics.sample_counts.deduplicated_rows) }} unique)</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Training Partition (80%)</span>
+          <div class="stat-icon blue"><i class="bi bi-grid-3x3-gap"></i></div>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(metrics.sample_counts.train_samples) }}</div>
+        <p class="stat-subtext">{{ "{:,}".format(metrics.sample_counts.train_purchases) }} purchases (15.6%)</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Hold-Out Test (20%)</span>
+          <div class="stat-icon green"><i class="bi bi-lock"></i></div>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(metrics.sample_counts.test_samples) }}</div>
+        <p class="stat-subtext">{{ "{:,}".format(metrics.sample_counts.test_purchases) }} purchases (15.6%)</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Decision Cutoff</span>
+          <div class="stat-icon amber"><i class="bi bi-sliders"></i></div>
+        </div>
+        <div class="stat-value">{{ "%.2f"|format(metrics.recommended_threshold) }}</div>
+        <p class="stat-subtext">Balanced F1 & Buyer Recall</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 1: 5-Fold Cross-Validation Comparison Table -->
+  <div class="content-card mb-4">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-bar-chart-steps text-primary"></i> 5-Fold Stratified Cross-Validation Comparison (Training Split Only)
+      </h2>
+      <span class="badge bg-primary-subtle text-primary border">No Test Set Leakage</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table custom-table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Model Architecture</th>
+            <th>Type</th>
+            <th>Val PR-AUC (Avg Precision)</th>
+            <th>Val ROC-AUC</th>
+            <th>Val F1-Score</th>
+            <th>Val Recall</th>
+            <th>Val Precision</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m_name, res in metrics.cross_validation_comparison.items() %}
+            <tr class="{% if m_name == metrics.champion_model %}table-primary table-opacity-10{% endif %}">
+              <td>
+                <strong>{{ m_name }}</strong>
+                {% if m_name == metrics.champion_model %}
+                  <span class="badge bg-primary ms-1">Champion</span>
+                {% endif %}
+              </td>
+              <td class="small text-muted">
+                {% if m_name == 'Logistic Regression' %}Linear Baseline (balanced weights)
+                {% elif m_name == 'Random Forest' %}Ensemble Bagging (150 trees)
+                {% else %}Gradient Boosting (Histogram)
+                {% endif %}
+              </td>
+              <td><strong class="text-primary">{{ "%.4f"|format(res.val_pr_auc) }}</strong></td>
+              <td>{{ "%.4f"|format(res.val_roc_auc) }}</td>
+              <td>{{ "%.4f"|format(res.val_f1) }}</td>
+              <td>{{ "%.2f"|format(res.val_recall * 100) }}%</td>
+              <td>{{ "%.2f"|format(res.val_precision * 100) }}%</td>
+              <td>
+                {% if m_name == metrics.champion_model %}
+                  <span class="badge bg-success">Selected Pipeline</span>
+                {% else %}
+                  <span class="badge bg-light text-muted border">Evaluated</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="content-card-body border-top py-2 bg-light">
+      <div class="small text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        <strong>Selection Rationale:</strong> In imbalanced datasets (15.5% minority buyers), ROC-AUC can be overly optimistic because large numbers of True Negatives suppress the False Positive Rate. PR-AUC focuses strictly on the minority class trade-off. Random Forest achieved the highest PR-AUC (0.3801) across 5 folds.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Final Hold-Out Test Evaluation Matrix -->
+  <div class="content-card mb-4">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-check2-all text-success"></i> Hold-Out Test Set Performance (2,441 Unseen Sessions)
+      </h2>
+      <span class="badge bg-success-subtle text-success border">Final Generalization Audit</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table custom-table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Test Accuracy</th>
+            <th>Test Precision</th>
+            <th>Test Recall</th>
+            <th>Test F1-Score</th>
+            <th>Test ROC-AUC</th>
+            <th>Test PR-AUC</th>
+            <th>Brier Score Loss</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m_name, res in metrics.test_evaluations.items() %}
+            <tr class="{% if m_name == metrics.champion_model %}table-success table-opacity-10{% endif %}">
+              <td><strong>{{ m_name }}</strong></td>
+              <td>{{ "%.2f"|format(res.accuracy * 100) }}%</td>
+              <td>{{ "%.2f"|format(res.precision * 100) }}%</td>
+              <td><strong class="text-success">{{ "%.2f"|format(res.recall * 100) }}%</strong></td>
+              <td>{{ "%.4f"|format(res.f1) }}</td>
+              <td>{{ "%.4f"|format(res.roc_auc) }}</td>
+              <td><strong class="text-primary">{{ "%.4f"|format(res.pr_auc) }}</strong></td>
+              <td class="small text-muted">{{ "%.4f"|format(res.brier_score) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 3: Confusion Matrix & ROC / PR Curve Visuals -->
+  <div class="row g-4 mb-4">
+    <!-- Confusion Matrix Card -->
+    <div class="col-lg-5">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-grid text-primary"></i> Test Confusion Matrix ({{ metrics.champion_model }})
+          </h2>
+          <span class="badge bg-light text-muted border">Default Cutoff (0.50)</span>
+        </div>
+        <div class="content-card-body">
+          {% set cm = metrics.test_evaluations[metrics.champion_model].confusion_matrix %}
+          <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle mb-3" style="height: 180px;">
+              <thead>
+                <tr>
+                  <th class="bg-light text-muted small" style="width: 35%;">Ground Truth \ Pred</th>
+                  <th class="bg-light text-primary">Pred: No Purchase (0)</th>
+                  <th class="bg-light text-primary">Pred: Purchase (1)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="bg-light text-muted small">Actual: No Purchase (0)</th>
+                  <td class="p-3" style="background-color: #f1f5f9;">
+                    <div class="h5 fw-bold text-dark mb-0">{{ "{:,}".format(cm[0][0]) }}</div>
+                    <div class="small text-success fw-semibold">True Negatives (TN)</div>
+                  </td>
+                  <td class="p-3" style="background-color: #fee2e2;">
+                    <div class="h5 fw-bold text-danger mb-0">{{ "{:,}".format(cm[0][1]) }}</div>
+                    <div class="small text-danger fw-semibold">False Positives (FP)</div>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-muted small">Actual: Purchase (1)</th>
+                  <td class="p-3" style="background-color: #ffedd5;">
+                    <div class="h5 fw-bold text-warning mb-0">{{ "{:,}".format(cm[1][0]) }}</div>
+                    <div class="small text-warning-emphasis fw-semibold">False Negatives (FN)</div>
+                  </td>
+                  <td class="p-3" style="background-color: #dcfce7;">
+                    <div class="h5 fw-bold text-success mb-0">{{ "{:,}".format(cm[1][1]) }}</div>
+                    <div class="small text-success fw-semibold">True Positives (TP)</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="small text-muted">
+            <strong>Business Interpretation:</strong> Out of 382 actual purchasing sessions in the hold-out test set, the champion model correctly identified <strong>{{ cm[1][1] }} buyers</strong> ({{ "%.1f"|format((cm[1][1]/382)*100) }}% recall at 0.50 cutoff), avoiding {{ cm[1][0] }} missed sales opportunities.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Curves Visualizer Card -->
+    <div class="col-lg-7">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-graph-up text-primary"></i> Diagnostics Curves (Chart.js)
+          </h2>
+          <ul class="nav nav-pills nav-fill small gap-2" id="curveTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active py-1 px-3" id="rocTabBtn" data-bs-toggle="tab" data-bs-target="#rocTabPane" type="button" role="tab">ROC Curve</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link py-1 px-3" id="prTabBtn" data-bs-toggle="tab" data-bs-target="#prTabPane" type="button" role="tab">PR Curve</button>
+            </li>
+          </ul>
+        </div>
+        <div class="content-card-body">
+          <div class="tab-content" id="curveTabContent">
+            <div class="tab-pane fade show active" id="rocTabPane" role="tabpanel">
+              <div style="height: 240px;">
+                <canvas id="evalRocChart"></canvas>
+              </div>
+              <div class="small text-muted text-center mt-2">
+                ROC-AUC = <strong>{{ "%.4f"|format(metrics.roc_curve.auc) }}</strong>. Dashed line represents random guessing (0.50).
+              </div>
+            </div>
+            <div class="tab-pane fade" id="prTabPane" role="tabpanel">
+              <div style="height: 240px;">
+                <canvas id="evalPrChart"></canvas>
+              </div>
+              <div class="small text-muted text-center mt-2">
+                PR-AUC = <strong>{{ "%.4f"|format(metrics.pr_curve.pr_auc) }}</strong>. Baseline random guess = 0.155 (15.5%).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Top Feature Importances -->
+  <div class="content-card mb-4">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-sort-down text-primary"></i> Behavioral Feature Importance Ranking ({{ metrics.champion_model }})
+      </h2>
+      <span class="badge bg-secondary-subtle text-secondary border">Global Tree Impurity Distribution</span>
+    </div>
+    <div class="content-card-body">
+      <div class="row g-3">
+        {% for feat in metrics.feature_importance[:8] %}
+          <div class="col-md-6 col-lg-3">
+            <div class="p-3 border rounded bg-light">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="text-dark small text-truncate" title="{{ feat.feature }}">{{ feat.feature }}</strong>
+                <span class="badge bg-primary">{{ feat.relative_percentage }}%</span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ feat.relative_percentage * 4 }}%;"></div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="small text-muted mt-3">
+        * <code>ExitRates</code> and <code>ProductRelated_Duration</code> dominate prediction power. When users spend extended minutes evaluating products with minimal exit hazard, purchase conversion likelihood surges exponentially.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Interactive Decision Threshold Simulator -->
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-sliders2 text-primary"></i> Operational Decision Threshold Simulation Table
+      </h2>
+      <span class="badge bg-warning-subtle text-warning-emphasis border">Precision vs Recall Trade-off</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table custom-table table-hover mb-0 text-center">
+        <thead>
+          <tr>
+            <th>Probability Cutoff</th>
+            <th>Recall (% Buyers Caught)</th>
+            <th>Precision (% True Buyers)</th>
+            <th>F1-Score</th>
+            <th>True Positives (TP)</th>
+            <th>False Positives (FP)</th>
+            <th>False Negatives (FN)</th>
+            <th>Strategic Suitability</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for th in metrics.threshold_analysis %}
+            <tr class="{% if th.threshold == metrics.recommended_threshold %}table-warning fw-bold{% endif %}">
+              <td>
+                {{ "%.2f"|format(th.threshold) }}
+                {% if th.threshold == metrics.recommended_threshold %}
+                  <span class="badge bg-warning text-dark ms-1">Recommended</span>
+                {% endif %}
+              </td>
+              <td class="text-success">{{ "%.1f"|format(th.recall * 100) }}%</td>
+              <td class="text-primary">{{ "%.1f"|format(th.precision * 100) }}%</td>
+              <td>{{ "%.4f"|format(th.f1) }}</td>
+              <td>{{ th.confusion_matrix[1][1] }}</td>
+              <td class="text-danger">{{ th.confusion_matrix[0][1] }}</td>
+              <td class="text-warning-emphasis">{{ th.confusion_matrix[1][0] }}</td>
+              <td class="small text-muted text-start">
+                {% if th.threshold <= 0.25 %}
+                  Aggressive lead capture (high recall, high discount waste)
+                {% elif th.threshold <= 0.45 %}
+                  Balanced commercial equilibrium (optimal F1)
+                {% else %}
+                  Conservative VIP qualification (high precision, low false alarms)
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not is_missing %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. ROC Curve Chart
+  const rocCanvas = document.getElementById("evalRocChart");
+  if (rocCanvas) {
+    const rawPoints = {{ metrics.roc_curve.points | tojson | safe }};
+    const labels = rawPoints.map(p => (p.fpr * 100).toFixed(1) + "%");
+    const dataVals = rawPoints.map(p => p.tpr * 100);
+
+    new Chart(rocCanvas, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Champion Model ROC (AUC = {{ '%.3f'|format(metrics.roc_curve.auc) }})",
+            data: dataVals,
+            borderColor: "#0284c7",
+            backgroundColor: "rgba(2, 132, 199, 0.08)",
+            fill: true,
+            tension: 0.2,
+            pointRadius: 2
+          },
+          {
+            label: "Random Guess (AUC = 0.50)",
+            data: rawPoints.map(p => p.fpr * 100),
+            borderColor: "#94a3b8",
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: "False Positive Rate (1 - Specificity)" } },
+          y: { title: { display: true, text: "True Positive Rate (Recall %)" }, min: 0, max: 100 }
+        }
+      }
+    });
+  }
+
+  // 2. PR Curve Chart
+  const prCanvas = document.getElementById("evalPrChart");
+  if (prCanvas) {
+    const rawPr = {{ metrics.pr_curve.points | tojson | safe }};
+    const prLabels = rawPr.map(p => (p.recall * 100).toFixed(1) + "%");
+    const prVals = rawPr.map(p => p.precision * 100);
+
+    new Chart(prCanvas, {
+      type: "line",
+      data: {
+        labels: prLabels,
+        datasets: [
+          {
+            label: "Champion Model PR (PR-AUC = {{ '%.3f'|format(metrics.pr_curve.pr_auc) }})",
+            data: prVals,
+            borderColor: "#0d9488",
+            backgroundColor: "rgba(13, 148, 136, 0.08)",
+            fill: true,
+            tension: 0.2,
+            pointRadius: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: "Recall (Coverage of Actual Buyers %)" } },
+          y: { title: { display: true, text: "Precision (Accuracy of Buyer Calls %)" }, min: 0, max: 100 }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,911 @@
+{
+  "model_version": "v1.0.0",
+  "champion_model": "Random Forest",
+  "recommended_threshold": 0.4,
+  "sample_counts": {
+    "raw_dataset_rows": 12330,
+    "deduplicated_rows": 12205,
+    "duplicates_removed": 125,
+    "train_samples": 9764,
+    "test_samples": 2441,
+    "train_purchases": 1526,
+    "train_non_purchases": 8238,
+    "test_purchases": 382,
+    "test_non_purchases": 2059
+  },
+  "features": {
+    "numerical": [
+      "Administrative",
+      "Administrative_Duration",
+      "Informational",
+      "Informational_Duration",
+      "ProductRelated",
+      "ProductRelated_Duration",
+      "BounceRates",
+      "ExitRates",
+      "SpecialDay"
+    ],
+    "categorical": [
+      "Month",
+      "OperatingSystems",
+      "Browser",
+      "Region",
+      "TrafficType",
+      "VisitorType",
+      "Weekend"
+    ],
+    "excluded_features": [
+      {
+        "name": "PageValues",
+        "reason": "Target leakage. Reflects historical e-commerce transaction value not available during active browsing."
+      },
+      {
+        "name": "Revenue",
+        "reason": "Ground truth target variable."
+      }
+    ]
+  },
+  "cross_validation_comparison": {
+    "Logistic Regression": {
+      "val_roc_auc": 0.7442,
+      "val_pr_auc": 0.3229,
+      "val_f1": 0.3911,
+      "val_recall": 0.7333,
+      "val_precision": 0.2667
+    },
+    "Random Forest": {
+      "val_roc_auc": 0.7757,
+      "val_pr_auc": 0.3801,
+      "val_f1": 0.4179,
+      "val_recall": 0.6736,
+      "val_precision": 0.303
+    },
+    "HistGradientBoosting": {
+      "val_roc_auc": 0.7638,
+      "val_pr_auc": 0.3619,
+      "val_f1": 0.4175,
+      "val_recall": 0.6003,
+      "val_precision": 0.3202
+    }
+  },
+  "test_evaluations": {
+    "Logistic Regression": {
+      "accuracy": 0.6493,
+      "precision": 0.2789,
+      "recall": 0.7827,
+      "f1": 0.4113,
+      "roc_auc": 0.7555,
+      "pr_auc": 0.331,
+      "brier_score": 0.2096,
+      "confusion_matrix": [
+        [
+          1286,
+          773
+        ],
+        [
+          83,
+          299
+        ]
+      ],
+      "test_samples": 2441
+    },
+    "Random Forest": {
+      "accuracy": 0.6915,
+      "precision": 0.2927,
+      "recall": 0.6859,
+      "f1": 0.4103,
+      "roc_auc": 0.7808,
+      "pr_auc": 0.3577,
+      "brier_score": 0.1776,
+      "confusion_matrix": [
+        [
+          1426,
+          633
+        ],
+        [
+          120,
+          262
+        ]
+      ],
+      "test_samples": 2441
+    },
+    "HistGradientBoosting": {
+      "accuracy": 0.7329,
+      "precision": 0.319,
+      "recall": 0.623,
+      "f1": 0.422,
+      "roc_auc": 0.7817,
+      "pr_auc": 0.3634,
+      "brier_score": 0.164,
+      "confusion_matrix": [
+        [
+          1551,
+          508
+        ],
+        [
+          144,
+          238
+        ]
+      ],
+      "test_samples": 2441
+    }
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.1,
+      "precision": 0.1811,
+      "recall": 0.9948,
+      "f1": 0.3065,
+      "confusion_matrix": [
+        [
+          341,
+          1718
+        ],
+        [
+          2,
+          380
+        ]
+      ]
+    },
+    {
+      "threshold": 0.15,
+      "precision": 0.1913,
+      "recall": 0.9895,
+      "f1": 0.3206,
+      "confusion_matrix": [
+        [
+          461,
+          1598
+        ],
+        [
+          4,
+          378
+        ]
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "precision": 0.203,
+      "recall": 0.9843,
+      "f1": 0.3366,
+      "confusion_matrix": [
+        [
+          583,
+          1476
+        ],
+        [
+          6,
+          376
+        ]
+      ]
+    },
+    {
+      "threshold": 0.25,
+      "precision": 0.2179,
+      "recall": 0.9712,
+      "f1": 0.3559,
+      "confusion_matrix": [
+        [
+          727,
+          1332
+        ],
+        [
+          11,
+          371
+        ]
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "precision": 0.2345,
+      "recall": 0.9581,
+      "f1": 0.3767,
+      "confusion_matrix": [
+        [
+          864,
+          1195
+        ],
+        [
+          16,
+          366
+        ]
+      ]
+    },
+    {
+      "threshold": 0.35,
+      "precision": 0.2463,
+      "recall": 0.911,
+      "f1": 0.3877,
+      "confusion_matrix": [
+        [
+          994,
+          1065
+        ],
+        [
+          34,
+          348
+        ]
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.2639,
+      "recall": 0.8586,
+      "f1": 0.4037,
+      "confusion_matrix": [
+        [
+          1144,
+          915
+        ],
+        [
+          54,
+          328
+        ]
+      ]
+    },
+    {
+      "threshold": 0.45,
+      "precision": 0.2798,
+      "recall": 0.7932,
+      "f1": 0.4137,
+      "confusion_matrix": [
+        [
+          1279,
+          780
+        ],
+        [
+          79,
+          303
+        ]
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.2927,
+      "recall": 0.6859,
+      "f1": 0.4103,
+      "confusion_matrix": [
+        [
+          1426,
+          633
+        ],
+        [
+          120,
+          262
+        ]
+      ]
+    },
+    {
+      "threshold": 0.55,
+      "precision": 0.3274,
+      "recall": 0.5812,
+      "f1": 0.4189,
+      "confusion_matrix": [
+        [
+          1603,
+          456
+        ],
+        [
+          160,
+          222
+        ]
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "precision": 0.386,
+      "recall": 0.4607,
+      "f1": 0.42,
+      "confusion_matrix": [
+        [
+          1779,
+          280
+        ],
+        [
+          206,
+          176
+        ]
+      ]
+    },
+    {
+      "threshold": 0.65,
+      "precision": 0.4179,
+      "recall": 0.3063,
+      "f1": 0.3535,
+      "confusion_matrix": [
+        [
+          1896,
+          163
+        ],
+        [
+          265,
+          117
+        ]
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.4615,
+      "recall": 0.2042,
+      "f1": 0.2831,
+      "confusion_matrix": [
+        [
+          1968,
+          91
+        ],
+        [
+          304,
+          78
+        ]
+      ]
+    },
+    {
+      "threshold": 0.75,
+      "precision": 0.4878,
+      "recall": 0.1047,
+      "f1": 0.1724,
+      "confusion_matrix": [
+        [
+          2017,
+          42
+        ],
+        [
+          342,
+          40
+        ]
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "precision": 0.3462,
+      "recall": 0.0236,
+      "f1": 0.0441,
+      "confusion_matrix": [
+        [
+          2042,
+          17
+        ],
+        [
+          373,
+          9
+        ]
+      ]
+    },
+    {
+      "threshold": 0.85,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion_matrix": [
+        [
+          2059,
+          0
+        ],
+        [
+          382,
+          0
+        ]
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion_matrix": [
+        [
+          2059,
+          0
+        ],
+        [
+          382,
+          0
+        ]
+      ]
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "ExitRates",
+      "importance": 0.1823,
+      "relative_percentage": 18.23
+    },
+    {
+      "feature": "ProductRelated_Duration",
+      "importance": 0.1334,
+      "relative_percentage": 13.34
+    },
+    {
+      "feature": "ProductRelated",
+      "importance": 0.1005,
+      "relative_percentage": 10.05
+    },
+    {
+      "feature": "Month",
+      "importance": 0.1002,
+      "relative_percentage": 10.02
+    },
+    {
+      "feature": "BounceRates",
+      "importance": 0.0908,
+      "relative_percentage": 9.08
+    },
+    {
+      "feature": "TrafficType",
+      "importance": 0.0677,
+      "relative_percentage": 6.77
+    },
+    {
+      "feature": "Administrative_Duration",
+      "importance": 0.066,
+      "relative_percentage": 6.6
+    },
+    {
+      "feature": "Administrative",
+      "importance": 0.0557,
+      "relative_percentage": 5.57
+    },
+    {
+      "feature": "Region",
+      "importance": 0.0405,
+      "relative_percentage": 4.05
+    },
+    {
+      "feature": "VisitorType",
+      "importance": 0.0372,
+      "relative_percentage": 3.72
+    },
+    {
+      "feature": "OperatingSystems",
+      "importance": 0.0287,
+      "relative_percentage": 2.87
+    },
+    {
+      "feature": "Informational_Duration",
+      "importance": 0.0244,
+      "relative_percentage": 2.44
+    },
+    {
+      "feature": "Browser",
+      "importance": 0.0242,
+      "relative_percentage": 2.42
+    },
+    {
+      "feature": "Informational",
+      "importance": 0.0167,
+      "relative_percentage": 1.67
+    },
+    {
+      "feature": "SpecialDay",
+      "importance": 0.016,
+      "relative_percentage": 1.6
+    },
+    {
+      "feature": "Weekend",
+      "importance": 0.0156,
+      "relative_percentage": 1.56
+    }
+  ],
+  "roc_curve": {
+    "auc": 0.7808,
+    "points": [
+      {
+        "fpr": 0.0,
+        "tpr": 0.0
+      },
+      {
+        "fpr": 0.0068,
+        "tpr": 0.0236
+      },
+      {
+        "fpr": 0.0126,
+        "tpr": 0.0602
+      },
+      {
+        "fpr": 0.018,
+        "tpr": 0.0969
+      },
+      {
+        "fpr": 0.0233,
+        "tpr": 0.123
+      },
+      {
+        "fpr": 0.0272,
+        "tpr": 0.1545
+      },
+      {
+        "fpr": 0.034,
+        "tpr": 0.178
+      },
+      {
+        "fpr": 0.0413,
+        "tpr": 0.2016
+      },
+      {
+        "fpr": 0.0486,
+        "tpr": 0.2304
+      },
+      {
+        "fpr": 0.0539,
+        "tpr": 0.2539
+      },
+      {
+        "fpr": 0.0636,
+        "tpr": 0.267
+      },
+      {
+        "fpr": 0.0777,
+        "tpr": 0.3037
+      },
+      {
+        "fpr": 0.0864,
+        "tpr": 0.3168
+      },
+      {
+        "fpr": 0.0952,
+        "tpr": 0.3351
+      },
+      {
+        "fpr": 0.1059,
+        "tpr": 0.356
+      },
+      {
+        "fpr": 0.1146,
+        "tpr": 0.377
+      },
+      {
+        "fpr": 0.1224,
+        "tpr": 0.4005
+      },
+      {
+        "fpr": 0.1287,
+        "tpr": 0.4398
+      },
+      {
+        "fpr": 0.136,
+        "tpr": 0.4529
+      },
+      {
+        "fpr": 0.1491,
+        "tpr": 0.4764
+      },
+      {
+        "fpr": 0.1593,
+        "tpr": 0.4895
+      },
+      {
+        "fpr": 0.1773,
+        "tpr": 0.5079
+      },
+      {
+        "fpr": 0.1909,
+        "tpr": 0.5262
+      },
+      {
+        "fpr": 0.1982,
+        "tpr": 0.5445
+      },
+      {
+        "fpr": 0.2122,
+        "tpr": 0.5602
+      },
+      {
+        "fpr": 0.221,
+        "tpr": 0.5785
+      },
+      {
+        "fpr": 0.2302,
+        "tpr": 0.5942
+      },
+      {
+        "fpr": 0.238,
+        "tpr": 0.6099
+      },
+      {
+        "fpr": 0.2472,
+        "tpr": 0.623
+      },
+      {
+        "fpr": 0.2618,
+        "tpr": 0.6387
+      },
+      {
+        "fpr": 0.2759,
+        "tpr": 0.6571
+      },
+      {
+        "fpr": 0.2909,
+        "tpr": 0.6754
+      },
+      {
+        "fpr": 0.3084,
+        "tpr": 0.6885
+      },
+      {
+        "fpr": 0.3152,
+        "tpr": 0.7042
+      },
+      {
+        "fpr": 0.3254,
+        "tpr": 0.7277
+      },
+      {
+        "fpr": 0.3317,
+        "tpr": 0.7435
+      },
+      {
+        "fpr": 0.3424,
+        "tpr": 0.7592
+      },
+      {
+        "fpr": 0.3677,
+        "tpr": 0.7749
+      },
+      {
+        "fpr": 0.3745,
+        "tpr": 0.7906
+      },
+      {
+        "fpr": 0.3876,
+        "tpr": 0.8089
+      },
+      {
+        "fpr": 0.3983,
+        "tpr": 0.822
+      },
+      {
+        "fpr": 0.4109,
+        "tpr": 0.8403
+      },
+      {
+        "fpr": 0.4371,
+        "tpr": 0.8534
+      },
+      {
+        "fpr": 0.4541,
+        "tpr": 0.8691
+      },
+      {
+        "fpr": 0.474,
+        "tpr": 0.8848
+      },
+      {
+        "fpr": 0.4862,
+        "tpr": 0.9031
+      },
+      {
+        "fpr": 0.5192,
+        "tpr": 0.9162
+      },
+      {
+        "fpr": 0.5342,
+        "tpr": 0.9346
+      },
+      {
+        "fpr": 0.5556,
+        "tpr": 0.9476
+      },
+      {
+        "fpr": 0.6178,
+        "tpr": 0.9634
+      },
+      {
+        "fpr": 0.6727,
+        "tpr": 0.9791
+      },
+      {
+        "fpr": 0.8247,
+        "tpr": 0.9948
+      }
+    ]
+  },
+  "pr_curve": {
+    "pr_auc": 0.3577,
+    "points": [
+      {
+        "recall": 1.0,
+        "precision": 0.1565
+      },
+      {
+        "recall": 1.0,
+        "precision": 0.1596
+      },
+      {
+        "recall": 1.0,
+        "precision": 0.163
+      },
+      {
+        "recall": 1.0,
+        "precision": 0.1664
+      },
+      {
+        "recall": 0.9974,
+        "precision": 0.1696
+      },
+      {
+        "recall": 0.9948,
+        "precision": 0.1728
+      },
+      {
+        "recall": 0.9948,
+        "precision": 0.1767
+      },
+      {
+        "recall": 0.9948,
+        "precision": 0.1807
+      },
+      {
+        "recall": 0.9921,
+        "precision": 0.1844
+      },
+      {
+        "recall": 0.9921,
+        "precision": 0.1888
+      },
+      {
+        "recall": 0.9869,
+        "precision": 0.1924
+      },
+      {
+        "recall": 0.9869,
+        "precision": 0.1973
+      },
+      {
+        "recall": 0.9843,
+        "precision": 0.2018
+      },
+      {
+        "recall": 0.9843,
+        "precision": 0.2072
+      },
+      {
+        "recall": 0.9817,
+        "precision": 0.2122
+      },
+      {
+        "recall": 0.9738,
+        "precision": 0.2164
+      },
+      {
+        "recall": 0.9712,
+        "precision": 0.222
+      },
+      {
+        "recall": 0.9607,
+        "precision": 0.2261
+      },
+      {
+        "recall": 0.9581,
+        "precision": 0.2324
+      },
+      {
+        "recall": 0.9555,
+        "precision": 0.239
+      },
+      {
+        "recall": 0.9424,
+        "precision": 0.2434
+      },
+      {
+        "recall": 0.9215,
+        "precision": 0.246
+      },
+      {
+        "recall": 0.9084,
+        "precision": 0.2509
+      },
+      {
+        "recall": 0.8927,
+        "precision": 0.2554
+      },
+      {
+        "recall": 0.8743,
+        "precision": 0.2595
+      },
+      {
+        "recall": 0.8586,
+        "precision": 0.2647
+      },
+      {
+        "recall": 0.8429,
+        "precision": 0.2704
+      },
+      {
+        "recall": 0.8272,
+        "precision": 0.2765
+      },
+      {
+        "recall": 0.8037,
+        "precision": 0.2804
+      },
+      {
+        "recall": 0.7723,
+        "precision": 0.2818
+      },
+      {
+        "recall": 0.7618,
+        "precision": 0.2913
+      },
+      {
+        "recall": 0.733,
+        "precision": 0.2944
+      },
+      {
+        "recall": 0.6937,
+        "precision": 0.2935
+      },
+      {
+        "recall": 0.6728,
+        "precision": 0.3006
+      },
+      {
+        "recall": 0.6545,
+        "precision": 0.3098
+      },
+      {
+        "recall": 0.6309,
+        "precision": 0.3175
+      },
+      {
+        "recall": 0.5995,
+        "precision": 0.3221
+      },
+      {
+        "recall": 0.5681,
+        "precision": 0.3273
+      },
+      {
+        "recall": 0.5419,
+        "precision": 0.3366
+      },
+      {
+        "recall": 0.5131,
+        "precision": 0.3457
+      },
+      {
+        "recall": 0.4921,
+        "precision": 0.3622
+      },
+      {
+        "recall": 0.4634,
+        "precision": 0.3758
+      },
+      {
+        "recall": 0.4162,
+        "precision": 0.3759
+      },
+      {
+        "recall": 0.3717,
+        "precision": 0.3787
+      },
+      {
+        "recall": 0.3351,
+        "precision": 0.3914
+      },
+      {
+        "recall": 0.3063,
+        "precision": 0.4194
+      },
+      {
+        "recall": 0.267,
+        "precision": 0.4416
+      },
+      {
+        "recall": 0.2277,
+        "precision": 0.4754
+      },
+      {
+        "recall": 0.1728,
+        "precision": 0.4889
+      },
+      {
+        "recall": 0.1073,
+        "precision": 0.4713
+      },
+      {
+        "recall": 0.0445,
+        "precision": 0.4359
+      }
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Web Analytics-Based User Conversion Prediction System{% endblock %}</title>
+  
+  <!-- Modern Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Custom Design System CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Desktop & Mobile Sidebar Navigation -->
+  <aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-header">
+      <div class="brand-icon">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">ConvertSense AI</div>
+        <div class="brand-subtitle">Web Analytics Intelligence</div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-title">Navigation</div>
+      
+      <a href="{{ url_for('main.index') }}" class="sidebar-link {{ 'active' if request.endpoint == 'main.index' }}">
+        <i class="bi bi-house-door"></i>
+        <span>Overview</span>
+      </a>
+
+      <a href="{{ url_for('dashboard.dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint == 'dashboard.dashboard' }}">
+        <i class="bi bi-speedometer2"></i>
+        <span>Analytics Dashboard</span>
+      </a>
+
+      <div class="nav-section-title mt-2">Machine Learning</div>
+
+      <a href="{{ url_for('prediction.predict') }}" class="sidebar-link {{ 'active' if request.endpoint == 'prediction.predict' }}">
+        <i class="bi bi-calculator"></i>
+        <span>Predict Conversion</span>
+      </a>
+
+      <a href="{{ url_for('history.history') }}" class="sidebar-link {{ 'active' if request.endpoint in ['history.history', 'history.prediction_detail'] }}">
+        <i class="bi bi-clock-history"></i>
+        <span>Prediction Records</span>
+      </a>
+
+      <a href="{{ url_for('evaluation.evaluation') }}" class="sidebar-link {{ 'active' if request.endpoint == 'evaluation.evaluation' }}">
+        <i class="bi bi-cpu"></i>
+        <span>Model Diagnostics</span>
+      </a>
+
+      <div class="nav-section-title mt-2">Data & System</div>
+
+      <a href="{{ url_for('data_explorer.data_explorer') }}" class="sidebar-link {{ 'active' if request.endpoint == 'data_explorer.data_explorer' }}">
+        <i class="bi bi-table"></i>
+        <span>Data Explorer</span>
+      </a>
+
+      <a href="{{ url_for('main.health_check') }}" target="_blank" class="sidebar-link">
+        <i class="bi bi-shield-check"></i>
+        <span>Health Endpoint</span>
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="text-white-50">Operational Model</span>
+        <span class="model-status-pill">
+          <span class="pulse-dot"></span> Online
+        </span>
+      </div>
+      <div class="small text-truncate" title="Random Forest Classifier">
+        Random Forest (v1.0.0)
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="app-main-wrapper">
+    <!-- Sticky Top Bar -->
+    <header class="top-navbar">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" id="sidebarToggleBtn" aria-label="Toggle Sidebar">
+          <i class="bi bi-list fs-5"></i>
+        </button>
+        <h1 class="navbar-page-title">
+          {% block page_title %}Conversion Prediction System{% endblock %}
+        </h1>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('prediction.predict') }}" class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm">
+          <i class="bi bi-plus-circle"></i>
+          <span class="d-none d-sm-inline">New Prediction</span>
+        </a>
+        <a href="https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary d-none d-md-flex align-items-center gap-1" title="Dataset Source: UCI Machine Learning Repository">
+          <i class="bi bi-box-arrow-up-right"></i>
+          <span>UCI Dataset</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="app-content">
+      <!-- Flash Alert Notifications -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi {{ 'bi-check-circle-fill' if category == 'success' else ('bi-exclamation-triangle-fill' if category == 'warning' else 'bi-info-circle-fill') }} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>
+        <strong>ConvertSense AI</strong> &copy; 2026. Built with Python, Flask, scikit-learn & SQLite.
+      </div>
+      <div class="d-flex gap-3">
+        <span class="badge bg-secondary-subtle text-secondary border">Dataset: UCI Online Shoppers (12,330 Sessions)</span>
+        <span class="badge bg-primary-subtle text-primary border">Leakage Guard: PageValues Excluded</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <script>
+    // Sidebar toggle for mobile responsive view
+    document.getElementById("sidebarToggleBtn")?.addEventListener("click", function () {
+      document.getElementById("appSidebar")?.classList.toggle("show");
+    });
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction #{{ record.id }} Details - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-info-circle text-primary"></i> Prediction Inspection: Session #{{ record.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <a href="{{ url_for('history.history') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to History Ledger
+    </a>
+    <span class="small text-muted">Created: {{ record.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Prediction Outcome & Actual Feedback -->
+    <div class="col-lg-5">
+      <div class="content-card mb-4">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-cpu text-primary"></i> Inference Summary
+          </h2>
+          <span class="badge bg-light text-muted border">{{ record.model_version }}</span>
+        </div>
+        <div class="content-card-body">
+          <div class="text-center py-3 border-bottom mb-3">
+            <div class="small text-uppercase text-muted fw-bold mb-1">Estimated Purchase Probability</div>
+            <div class="display-5 fw-bold text-primary mb-2">
+              {{ "%.1f"|format(record.purchase_probability * 100) }}%
+            </div>
+            <div>
+              {% if record.predicted_class == 1 %}
+                <span class="badge badge-custom badge-purchase fs-6 px-3 py-1">
+                  <i class="bi bi-check-circle"></i> Class 1: Purchase Predicted
+                </span>
+              {% else %}
+                <span class="badge badge-custom badge-non-purchase fs-6 px-3 py-1">
+                  <i class="bi bi-x-circle"></i> Class 0: No Purchase Predicted
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row g-2 small py-2 border-bottom mb-3">
+            <div class="col-6">
+              <span class="text-muted d-block">Decision Cutoff:</span>
+              <strong>{{ "%.2f"|format(record.decision_threshold) }} ({{ "%.0f"|format(record.decision_threshold * 100) }}%)</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">Session Label:</span>
+              <strong class="text-truncate d-block">{{ record.session_summary or 'Standard Visitor' }}</strong>
+            </div>
+            <div class="col-12 mt-2">
+              <span class="text-muted d-block">Internal Notes:</span>
+              <span class="text-dark">{{ record.notes or 'None' }}</span>
+            </div>
+          </div>
+
+          <!-- Record Ground Truth Actual Outcome -->
+          <div class="p-3 bg-light rounded border">
+            <div class="small fw-bold text-dark mb-2">
+              <i class="bi bi-pencil-square text-primary"></i> Actual Ground Truth Outcome:
+            </div>
+            <form method="POST" action="{{ url_for('history.update_outcome', prediction_id=record.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <div class="d-flex gap-2">
+                <select name="actual_outcome" class="form-select form-select-sm">
+                  <option value="" {% if record.actual_outcome is none %}selected{% endif %}>Pending / Unknown</option>
+                  <option value="1" {% if record.actual_outcome == 1 %}selected{% endif %}>Purchased (Class 1)</option>
+                  <option value="0" {% if record.actual_outcome == 0 %}selected{% endif %}>Did Not Purchase (Class 0)</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">Update</button>
+              </div>
+            </form>
+            <div class="form-text small mt-1">
+              Used to audit model accuracy over time as post-session cart data resolves.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Full Session Feature Attributes Table -->
+    <div class="col-lg-7">
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-list-check text-primary"></i> Session Attributes (16 Features)
+          </h2>
+          <span class="badge bg-secondary-subtle text-secondary border">Stored JSON Payload</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table custom-table table-striped mb-0">
+            <thead>
+              <tr>
+                <th>Feature Name</th>
+                <th>Category</th>
+                <th>Recorded Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for k, v in record.session_features.items() %}
+                <tr>
+                  <td><strong>{{ k }}</strong></td>
+                  <td class="small text-muted">
+                    {% if k in ['Month', 'OperatingSystems', 'Browser', 'Region', 'TrafficType', 'VisitorType', 'Weekend'] %}
+                      <span class="badge bg-light text-secondary border">Categorical</span>
+                    {% else %}
+                      <span class="badge bg-light text-info border">Numerical</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if k == 'Revenue' or k == 'PageValues' %}
+                      <span class="text-danger fw-bold">{{ v }} (Excluded)</span>
+                    {% else %}
+                      <code class="text-primary">{{ v }}</code>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

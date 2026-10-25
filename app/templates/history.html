@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction History - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-clock-history text-primary"></i> Historical Prediction Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <!-- Search, Filter & Action Bar -->
+  <div class="content-card mb-4">
+    <div class="content-card-body py-3">
+      <div class="row g-2 align-items-center justify-content-between">
+        <div class="col-12 col-md-8">
+          <form method="GET" action="{{ url_for('history.history') }}" class="row g-2 align-items-center">
+            <!-- Search Input -->
+            <div class="col-sm-6 col-md-5">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search ID or Campaign label..." value="{{ search_query }}">
+              </div>
+            </div>
+
+            <!-- Filter by Predicted Class -->
+            <div class="col-sm-4 col-md-4">
+              <select name="predicted" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if predicted_filter == 'all' %}selected{% endif %}>All Predictions</option>
+                <option value="1" {% if predicted_filter == '1' %}selected{% endif %}>Predicted Purchase (Class 1)</option>
+                <option value="0" {% if predicted_filter == '0' %}selected{% endif %}>Predicted Non-Purchase (Class 0)</option>
+              </select>
+            </div>
+
+            <div class="col-auto">
+              <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+              {% if search_query or predicted_filter != 'all' %}
+                <a href="{{ url_for('history.history') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+
+        <div class="col-12 col-md-4 text-md-end d-flex gap-2 justify-content-md-end mt-2 mt-md-0">
+          <!-- Safe CSV Export -->
+          <a href="{{ url_for('history.export_csv') }}" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
+            <i class="bi bi-download"></i> Export CSV
+          </a>
+
+          <!-- Clear History (with modal confirmation) -->
+          {% if pagination.total > 0 %}
+          <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
+            <i class="bi bi-trash3"></i> Clear Records
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-table text-primary"></i> Saved Visitor Predictions
+      </h2>
+      <span class="badge bg-secondary-subtle text-secondary border">Total Logged: {{ pagination.total }}</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width: 80px;">ID</th>
+            <th>Logged At (UTC)</th>
+            <th>Session Summary / Label</th>
+            <th>Probability</th>
+            <th>Predicted Class</th>
+            <th>Decision Threshold</th>
+            <th>Model Version</th>
+            <th>Actual Outcome</th>
+            <th class="text-end" style="width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if predictions %}
+            {% for rec in predictions %}
+              <tr>
+                <td><strong class="text-primary">#{{ rec.id }}</strong></td>
+                <td class="small text-muted">{{ rec.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                  <div class="fw-semibold text-dark text-truncate" style="max-width: 240px;" title="{{ rec.session_summary or 'Standard Session' }}">
+                    {{ rec.session_summary or 'Standard Session' }}
+                  </div>
+                  <div class="small text-muted">
+                    {{ rec.session_features.get('ProductRelated', 0) }} prod pages, {{ "%.0f"|format(rec.session_features.get('ProductRelated_Duration', 0)) }}s dur
+                  </div>
+                </td>
+                <td>
+                  <span class="fw-bold {% if rec.purchase_probability >= rec.decision_threshold %}text-success{% else %}text-muted{% endif %}">
+                    {{ "%.1f"|format(rec.purchase_probability * 100) }}%
+                  </span>
+                </td>
+                <td>
+                  {% if rec.predicted_class == 1 %}
+                    <span class="badge badge-custom badge-purchase">
+                      <i class="bi bi-check-circle"></i> Purchase
+                    </span>
+                  {% else %}
+                    <span class="badge badge-custom badge-non-purchase">
+                      <i class="bi bi-x-circle"></i> No Purchase
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ "%.2f"|format(rec.decision_threshold) }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border small">{{ rec.model_version }}</span>
+                </td>
+                <td>
+                  {% if rec.actual_outcome == 1 %}
+                    <span class="badge bg-success-subtle text-success border small">Confirmed Purchased</span>
+                  {% elif rec.actual_outcome == 0 %}
+                    <span class="badge bg-secondary-subtle text-secondary border small">Confirmed Non-Purchase</span>
+                  {% else %}
+                    <span class="text-muted small fst-italic">Pending / Unknown</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a href="{{ url_for('history.prediction_detail', prediction_id=rec.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2" title="Inspect Full 16 Attributes">
+                    <i class="bi bi-eye"></i> Details
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                <div class="h6 text-muted">No prediction records found.</div>
+                <p class="small text-muted mb-3">Run your first real-time conversion prediction to populate the history ledger.</p>
+                <a href="{{ url_for('prediction.predict') }}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-plus-circle me-1"></i> Make Prediction
+                </a>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if pagination.pages > 1 %}
+    <div class="content-card-body border-top py-3">
+      <nav aria-label="Prediction History Pagination">
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+            <a class="page-link" href="{{ url_for('history.history', page=pagination.prev_num, q=search_query, predicted=predicted_filter) }}">Previous</a>
+          </li>
+          {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+              <li class="page-item {{ 'active' if p == pagination.page }}">
+                <a class="page-link" href="{{ url_for('history.history', page=p, q=search_query, predicted=predicted_filter) }}">{{ p }}</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+          <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+            <a class="page-link" href="{{ url_for('history.history', page=pagination.next_num, q=search_query, predicted=predicted_filter) }}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Clear History Confirmation Modal -->
+<div class="modal fade" id="clearHistoryModal" tabindex="-1" aria-labelledby="clearHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clearHistoryModalLabel">
+          <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Clear Prediction History
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-secondary">
+        Are you sure you want to delete all historical prediction records from the database? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('history.clear_history') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="btn btn-sm btn-danger">Yes, Clear Records</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,532 @@
+{
+  "dataset_name": "UCI Online Shoppers Purchasing Intention Dataset",
+  "total_sessions": 12330,
+  "duplicate_rows": 125,
+  "missing_values": 0,
+  "conversions": 1908,
+  "non_conversions": 10422,
+  "conversion_rate": 0.1547,
+  "target_distribution": {
+    "True": 1908,
+    "False": 10422
+  },
+  "visitor_type_rates": [
+    {
+      "VisitorType": "New_Visitor",
+      "total_sessions": 1694,
+      "conversion_rate": 0.2491,
+      "conversions": 422
+    },
+    {
+      "VisitorType": "Other",
+      "total_sessions": 85,
+      "conversion_rate": 0.1882,
+      "conversions": 16
+    },
+    {
+      "VisitorType": "Returning_Visitor",
+      "total_sessions": 10551,
+      "conversion_rate": 0.1393,
+      "conversions": 1470
+    }
+  ],
+  "month_rates": [
+    {
+      "Month": "Aug",
+      "total_sessions": 433,
+      "conversion_rate": 0.1755,
+      "conversions": 76
+    },
+    {
+      "Month": "Dec",
+      "total_sessions": 1727,
+      "conversion_rate": 0.1251,
+      "conversions": 216
+    },
+    {
+      "Month": "Feb",
+      "total_sessions": 184,
+      "conversion_rate": 0.0163,
+      "conversions": 3
+    },
+    {
+      "Month": "Jul",
+      "total_sessions": 432,
+      "conversion_rate": 0.1528,
+      "conversions": 66
+    },
+    {
+      "Month": "June",
+      "total_sessions": 288,
+      "conversion_rate": 0.1007,
+      "conversions": 29
+    },
+    {
+      "Month": "Mar",
+      "total_sessions": 1907,
+      "conversion_rate": 0.1007,
+      "conversions": 192
+    },
+    {
+      "Month": "May",
+      "total_sessions": 3364,
+      "conversion_rate": 0.1085,
+      "conversions": 365
+    },
+    {
+      "Month": "Nov",
+      "total_sessions": 2998,
+      "conversion_rate": 0.2535,
+      "conversions": 760
+    },
+    {
+      "Month": "Oct",
+      "total_sessions": 549,
+      "conversion_rate": 0.2095,
+      "conversions": 115
+    },
+    {
+      "Month": "Sep",
+      "total_sessions": 448,
+      "conversion_rate": 0.192,
+      "conversions": 86
+    }
+  ],
+  "traffic_type_rates": [
+    {
+      "TrafficType": 1,
+      "total_sessions": 2451,
+      "conversion_rate": 0.1069,
+      "conversions": 262
+    },
+    {
+      "TrafficType": 2,
+      "total_sessions": 3913,
+      "conversion_rate": 0.2165,
+      "conversions": 847
+    },
+    {
+      "TrafficType": 3,
+      "total_sessions": 2052,
+      "conversion_rate": 0.0877,
+      "conversions": 180
+    },
+    {
+      "TrafficType": 4,
+      "total_sessions": 1069,
+      "conversion_rate": 0.1543,
+      "conversions": 165
+    },
+    {
+      "TrafficType": 5,
+      "total_sessions": 260,
+      "conversion_rate": 0.2154,
+      "conversions": 56
+    },
+    {
+      "TrafficType": 6,
+      "total_sessions": 444,
+      "conversion_rate": 0.1194,
+      "conversions": 53
+    },
+    {
+      "TrafficType": 7,
+      "total_sessions": 40,
+      "conversion_rate": 0.3,
+      "conversions": 12
+    },
+    {
+      "TrafficType": 8,
+      "total_sessions": 343,
+      "conversion_rate": 0.277,
+      "conversions": 95
+    },
+    {
+      "TrafficType": 9,
+      "total_sessions": 42,
+      "conversion_rate": 0.0952,
+      "conversions": 4
+    },
+    {
+      "TrafficType": 10,
+      "total_sessions": 450,
+      "conversion_rate": 0.2,
+      "conversions": 90
+    },
+    {
+      "TrafficType": 11,
+      "total_sessions": 247,
+      "conversion_rate": 0.1903,
+      "conversions": 47
+    },
+    {
+      "TrafficType": 12,
+      "total_sessions": 1,
+      "conversion_rate": 0.0,
+      "conversions": 0
+    },
+    {
+      "TrafficType": 13,
+      "total_sessions": 738,
+      "conversion_rate": 0.0583,
+      "conversions": 43
+    },
+    {
+      "TrafficType": 14,
+      "total_sessions": 13,
+      "conversion_rate": 0.1538,
+      "conversions": 2
+    },
+    {
+      "TrafficType": 15,
+      "total_sessions": 38,
+      "conversion_rate": 0.0,
+      "conversions": 0
+    },
+    {
+      "TrafficType": 16,
+      "total_sessions": 3,
+      "conversion_rate": 0.3333,
+      "conversions": 1
+    },
+    {
+      "TrafficType": 17,
+      "total_sessions": 1,
+      "conversion_rate": 0.0,
+      "conversions": 0
+    },
+    {
+      "TrafficType": 18,
+      "total_sessions": 10,
+      "conversion_rate": 0.0,
+      "conversions": 0
+    },
+    {
+      "TrafficType": 19,
+      "total_sessions": 17,
+      "conversion_rate": 0.0588,
+      "conversions": 1
+    },
+    {
+      "TrafficType": 20,
+      "total_sessions": 198,
+      "conversion_rate": 0.2525,
+      "conversions": 50
+    }
+  ],
+  "weekend_rates": [
+    {
+      "Weekend": false,
+      "total_sessions": 9462,
+      "conversion_rate": 0.1489,
+      "conversions": 1409
+    },
+    {
+      "Weekend": true,
+      "total_sessions": 2868,
+      "conversion_rate": 0.174,
+      "conversions": 499
+    }
+  ],
+  "operating_systems_rates": [
+    {
+      "OperatingSystems": 1,
+      "total_sessions": 2585,
+      "conversion_rate": 0.1466,
+      "conversions": 379
+    },
+    {
+      "OperatingSystems": 2,
+      "total_sessions": 6601,
+      "conversion_rate": 0.175,
+      "conversions": 1155
+    },
+    {
+      "OperatingSystems": 3,
+      "total_sessions": 2555,
+      "conversion_rate": 0.1049,
+      "conversions": 268
+    },
+    {
+      "OperatingSystems": 4,
+      "total_sessions": 478,
+      "conversion_rate": 0.1778,
+      "conversions": 85
+    },
+    {
+      "OperatingSystems": 5,
+      "total_sessions": 6,
+      "conversion_rate": 0.1667,
+      "conversions": 1
+    },
+    {
+      "OperatingSystems": 6,
+      "total_sessions": 19,
+      "conversion_rate": 0.1053,
+      "conversions": 2
+    },
+    {
+      "OperatingSystems": 7,
+      "total_sessions": 7,
+      "conversion_rate": 0.1429,
+      "conversions": 1
+    },
+    {
+      "OperatingSystems": 8,
+      "total_sessions": 79,
+      "conversion_rate": 0.2152,
+      "conversions": 17
+    }
+  ],
+  "browser_rates": [
+    {
+      "Browser": 1,
+      "total_sessions": 2462,
+      "conversion_rate": 0.1483,
+      "conversions": 365
+    },
+    {
+      "Browser": 2,
+      "total_sessions": 7961,
+      "conversion_rate": 0.1536,
+      "conversions": 1223
+    },
+    {
+      "Browser": 3,
+      "total_sessions": 105,
+      "conversion_rate": 0.0476,
+      "conversions": 5
+    },
+    {
+      "Browser": 4,
+      "total_sessions": 736,
+      "conversion_rate": 0.1766,
+      "conversions": 130
+    },
+    {
+      "Browser": 5,
+      "total_sessions": 467,
+      "conversion_rate": 0.1842,
+      "conversions": 86
+    },
+    {
+      "Browser": 6,
+      "total_sessions": 174,
+      "conversion_rate": 0.1149,
+      "conversions": 20
+    },
+    {
+      "Browser": 7,
+      "total_sessions": 49,
+      "conversion_rate": 0.1224,
+      "conversions": 6
+    },
+    {
+      "Browser": 8,
+      "total_sessions": 135,
+      "conversion_rate": 0.1556,
+      "conversions": 21
+    },
+    {
+      "Browser": 9,
+      "total_sessions": 1,
+      "conversion_rate": 0.0,
+      "conversions": 0
+    },
+    {
+      "Browser": 10,
+      "total_sessions": 163,
+      "conversion_rate": 0.1963,
+      "conversions": 32
+    },
+    {
+      "Browser": 11,
+      "total_sessions": 6,
+      "conversion_rate": 0.1667,
+      "conversions": 1
+    },
+    {
+      "Browser": 12,
+      "total_sessions": 10,
+      "conversion_rate": 0.3,
+      "conversions": 3
+    },
+    {
+      "Browser": 13,
+      "total_sessions": 61,
+      "conversion_rate": 0.2623,
+      "conversions": 16
+    }
+  ],
+  "region_rates": [
+    {
+      "Region": 1,
+      "total_sessions": 4780,
+      "conversion_rate": 0.1613,
+      "conversions": 771
+    },
+    {
+      "Region": 2,
+      "total_sessions": 1136,
+      "conversion_rate": 0.1655,
+      "conversions": 188
+    },
+    {
+      "Region": 3,
+      "total_sessions": 2403,
+      "conversion_rate": 0.1452,
+      "conversions": 349
+    },
+    {
+      "Region": 4,
+      "total_sessions": 1182,
+      "conversion_rate": 0.1481,
+      "conversions": 175
+    },
+    {
+      "Region": 5,
+      "total_sessions": 318,
+      "conversion_rate": 0.1635,
+      "conversions": 52
+    },
+    {
+      "Region": 6,
+      "total_sessions": 805,
+      "conversion_rate": 0.1391,
+      "conversions": 112
+    },
+    {
+      "Region": 7,
+      "total_sessions": 761,
+      "conversion_rate": 0.1564,
+      "conversions": 119
+    },
+    {
+      "Region": 8,
+      "total_sessions": 434,
+      "conversion_rate": 0.129,
+      "conversions": 56
+    },
+    {
+      "Region": 9,
+      "total_sessions": 511,
+      "conversion_rate": 0.1683,
+      "conversions": 86
+    }
+  ],
+  "numerical_stats": {
+    "Administrative": {
+      "count": 12330.0,
+      "mean": 2.3152,
+      "std": 3.3218,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 1.0,
+      "75%": 4.0,
+      "max": 27.0
+    },
+    "Administrative_Duration": {
+      "count": 12330.0,
+      "mean": 80.8186,
+      "std": 176.7791,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 7.5,
+      "75%": 93.2562,
+      "max": 3398.75
+    },
+    "Informational": {
+      "count": 12330.0,
+      "mean": 0.5036,
+      "std": 1.2702,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 24.0
+    },
+    "Informational_Duration": {
+      "count": 12330.0,
+      "mean": 34.4724,
+      "std": 140.7493,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 2549.375
+    },
+    "ProductRelated": {
+      "count": 12330.0,
+      "mean": 31.7315,
+      "std": 44.4755,
+      "min": 0.0,
+      "25%": 7.0,
+      "50%": 18.0,
+      "75%": 38.0,
+      "max": 705.0
+    },
+    "ProductRelated_Duration": {
+      "count": 12330.0,
+      "mean": 1194.7462,
+      "std": 1913.6693,
+      "min": 0.0,
+      "25%": 184.1375,
+      "50%": 598.9369,
+      "75%": 1464.1572,
+      "max": 63973.5222
+    },
+    "BounceRates": {
+      "count": 12330.0,
+      "mean": 0.0222,
+      "std": 0.0485,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0031,
+      "75%": 0.0168,
+      "max": 0.2
+    },
+    "ExitRates": {
+      "count": 12330.0,
+      "mean": 0.0431,
+      "std": 0.0486,
+      "min": 0.0,
+      "25%": 0.0143,
+      "50%": 0.0252,
+      "75%": 0.05,
+      "max": 0.2
+    },
+    "PageValues": {
+      "count": 12330.0,
+      "mean": 5.8893,
+      "std": 18.5684,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 361.7637
+    },
+    "SpecialDay": {
+      "count": 12330.0,
+      "mean": 0.0614,
+      "std": 0.1989,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 1.0
+    }
+  },
+  "correlations_with_target": {
+    "Administrative": 0.1389,
+    "Administrative_Duration": 0.0936,
+    "Informational": 0.0952,
+    "Informational_Duration": 0.0703,
+    "ProductRelated": 0.1585,
+    "ProductRelated_Duration": 0.1524,
+    "BounceRates": -0.1507,
+    "ExitRates": -0.2071,
+    "PageValues": 0.4926,
+    "SpecialDay": -0.0823
+  },
+  "data_leakage_note": "PageValues has an extraordinarily high correlation with Revenue (~0.49). In e-commerce analytics, PageValues reflects the average value of a web page visited by the user prior to completing an e-commerce transaction. Including PageValues creates post-hoc target leakage for real-time pre-purchase prediction when a visitor is actively browsing. Hence, PageValues is excluded from the real-time operational classification model."
+}

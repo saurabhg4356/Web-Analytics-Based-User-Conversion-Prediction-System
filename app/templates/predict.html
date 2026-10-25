@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Conversion - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-calculator text-primary"></i> Real-Time Session Conversion Prediction{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <!-- Prediction Result Banner (if submitted) -->
+  {% if prediction_result %}
+  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" 
+       style="background: {% if prediction_result.predicted_class == 1 %}linear-gradient(135deg, #064e3b 0%, #065f46 100%){% else %}linear-gradient(135deg, #1e293b 0%, #334155 100%){% endif %}; color: white;">
+    <div class="card-body p-4">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-20 text-white small mb-2">
+            <i class="bi bi-cpu"></i> {{ prediction_result.model_name }} Inference Engine
+          </div>
+          <div class="d-flex align-items-baseline gap-3 mb-2">
+            <h2 class="display-6 fw-bold mb-0 text-white">
+              {% if prediction_result.predicted_class == 1 %}
+                <i class="bi bi-bag-check-fill text-success"></i> Purchase Likely
+              {% else %}
+                <i class="bi bi-bag-x-fill text-light text-opacity-75"></i> Non-Purchase Likely
+              {% endif %}
+            </h2>
+            <span class="badge {% if prediction_result.predicted_class == 1 %}bg-success{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+              Class {{ prediction_result.predicted_class }} ({{ prediction_result.predicted_label }})
+            </span>
+          </div>
+
+          <p class="text-white text-opacity-75 small mb-3">
+            Estimated Purchase Probability: <strong class="text-white fs-5">{{ prediction_result.purchase_probability_pct }}</strong> 
+            (Decision Cutoff: {{ prediction_result.threshold_pct }})
+          </p>
+
+          <!-- Probability Meter Bar -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small text-white text-opacity-75 mb-1">
+              <span>0% (Zero Intent)</span>
+              <span>Cutoff: {{ prediction_result.threshold_pct }}</span>
+              <span>100% (Definite Purchase)</span>
+            </div>
+            <div class="probability-meter-container" style="background-color: rgba(255,255,255,0.2);">
+              <div class="probability-meter-bar" 
+                   style="width: {{ prediction_result.purchase_probability * 100 }}%; 
+                          background-color: {% if prediction_result.predicted_class == 1 %}#10b981{% else %}#94a3b8{% endif %};">
+                {{ prediction_result.purchase_probability_pct }}
+              </div>
+              <div class="probability-threshold-marker" style="left: {{ prediction_result.decision_threshold * 100 }}%; background-color: #ffffff;" title="Threshold: {{ prediction_result.threshold_pct }}"></div>
+            </div>
+          </div>
+
+          <div class="small text-white text-opacity-75 fst-italic">
+            <i class="bi bi-info-circle me-1"></i> {{ prediction_result.disclaimer }}
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="p-3 bg-white bg-opacity-10 border border-white border-opacity-15 rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small text-uppercase fw-bold text-white text-opacity-75">Session Engagement Score</span>
+              <span class="badge bg-light text-dark fw-bold">{{ prediction_result.engagement_score }}/100</span>
+            </div>
+            <div class="progress mb-3" style="height: 8px;">
+              <div class="progress-bar bg-info" role="progressbar" style="width: {{ prediction_result.engagement_score }}%;" aria-valuenow="{{ prediction_result.engagement_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <div class="small fw-bold text-white mb-2">Top Session Behavioral Drivers:</div>
+            <ul class="list-unstyled small mb-3">
+              {% for factor in prediction_result.feature_explanations %}
+                <li class="mb-1 d-flex align-items-start gap-2">
+                  <span class="badge {% if factor.impact == 'Positive' %}bg-success{% elif factor.impact == 'Negative' %}bg-danger{% else %}bg-secondary{% endif %} px-2">
+                    {{ factor.impact }}
+                  </span>
+                  <span><strong>{{ factor.feature }} ({{ factor.value }}):</strong> {{ factor.description }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-white border-opacity-10">
+              <span class="small text-white text-opacity-75">Saved to Database (ID: #{{ prediction_result.prediction_id }})</span>
+              <a href="{{ url_for('history.history') }}" class="btn btn-sm btn-outline-light py-0 px-2" style="font-size: 0.75rem;">
+                View in History <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Quick Scenario Presets -->
+  <div class="content-card mb-4">
+    <div class="content-card-body py-3">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="small fw-bold text-secondary me-2">
+          <i class="bi bi-lightning-charge"></i> Instant Test Presets:
+        </span>
+        <button type="button" class="preset-badge" data-preset="high_intent">
+          <i class="bi bi-bag-check text-success"></i> High-Intent Shopper (Nov Cart)
+        </button>
+        <button type="button" class="preset-badge" data-preset="holiday_deal_hunter">
+          <i class="bi bi-gift text-primary"></i> Holiday Deal Hunter (Dec Weekend)
+        </button>
+        <button type="button" class="preset-badge" data-preset="window_shopper">
+          <i class="bi bi-eye text-warning"></i> Casual Window Shopper
+        </button>
+        <button type="button" class="preset-badge" data-preset="immediate_bounce">
+          <i class="bi bi-box-arrow-right text-danger"></i> Immediate Bounce Session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prediction Form Card -->
+  <div class="content-card" id="predictionFormCard">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-sliders text-primary"></i> Session Behavioral Attributes
+      </h2>
+      <span class="badge bg-primary-subtle text-primary border">16 Active Features (PageValues Guard Enabled)</span>
+    </div>
+
+    <div class="content-card-body">
+      <form method="POST" action="{{ url_for('prediction.predict') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- Group 1: Page Views & Browsing Duration -->
+        <h3 class="h6 fw-bold text-uppercase text-muted border-bottom pb-2 mb-3">
+          1. Website Page Browsing & Engagement
+        </h3>
+        <div class="row g-3 mb-4">
+          <!-- Product Pages -->
+          <div class="col-md-3">
+            {{ form.product_related.label(class="form-label small fw-semibold") }}
+            {{ form.product_related(class="form-control" + (" is-invalid" if form.product_related.errors else "")) }}
+            {% if form.product_related.errors %}
+              <div class="invalid-feedback">{{ form.product_related.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.product_related.description }}</div>
+          </div>
+
+          <!-- Product Duration -->
+          <div class="col-md-3">
+            {{ form.product_related_duration.label(class="form-label small fw-semibold") }}
+            {{ form.product_related_duration(class="form-control" + (" is-invalid" if form.product_related_duration.errors else "")) }}
+            {% if form.product_related_duration.errors %}
+              <div class="invalid-feedback">{{ form.product_related_duration.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.product_related_duration.description }}</div>
+          </div>
+
+          <!-- Admin Pages -->
+          <div class="col-md-3">
+            {{ form.administrative.label(class="form-label small fw-semibold") }}
+            {{ form.administrative(class="form-control" + (" is-invalid" if form.administrative.errors else "")) }}
+            {% if form.administrative.errors %}
+              <div class="invalid-feedback">{{ form.administrative.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.administrative.description }}</div>
+          </div>
+
+          <!-- Admin Duration -->
+          <div class="col-md-3">
+            {{ form.administrative_duration.label(class="form-label small fw-semibold") }}
+            {{ form.administrative_duration(class="form-control" + (" is-invalid" if form.administrative_duration.errors else "")) }}
+            {% if form.administrative_duration.errors %}
+              <div class="invalid-feedback">{{ form.administrative_duration.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.administrative_duration.description }}</div>
+          </div>
+
+          <!-- Info Pages -->
+          <div class="col-md-3">
+            {{ form.informational.label(class="form-label small fw-semibold") }}
+            {{ form.informational(class="form-control" + (" is-invalid" if form.informational.errors else "")) }}
+            {% if form.informational.errors %}
+              <div class="invalid-feedback">{{ form.informational.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.informational.description }}</div>
+          </div>
+
+          <!-- Info Duration -->
+          <div class="col-md-3">
+            {{ form.informational_duration.label(class="form-label small fw-semibold") }}
+            {{ form.informational_duration(class="form-control" + (" is-invalid" if form.informational_duration.errors else "")) }}
+            {% if form.informational_duration.errors %}
+              <div class="invalid-feedback">{{ form.informational_duration.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.informational_duration.description }}</div>
+          </div>
+
+          <!-- Special Day -->
+          <div class="col-md-3">
+            {{ form.special_day.label(class="form-label small fw-semibold") }}
+            {{ form.special_day(class="form-control" + (" is-invalid" if form.special_day.errors else "")) }}
+            {% if form.special_day.errors %}
+              <div class="invalid-feedback">{{ form.special_day.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.special_day.description }}</div>
+          </div>
+
+          <!-- Notice on PageValues exclusion -->
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">PageValues Metric</label>
+            <input type="text" class="form-control bg-light text-muted" value="EXCLUDED (Leakage Guard)" disabled>
+            <div class="form-text text-danger small">Excluded from real-time model to prevent target leakage.</div>
+          </div>
+        </div>
+
+        <!-- Group 2: Behavioral Risk Metrics -->
+        <h3 class="h6 fw-bold text-uppercase text-muted border-bottom pb-2 mb-3">
+          2. Analytics Exit & Bounce Hazards
+        </h3>
+        <div class="row g-3 mb-4">
+          <!-- Bounce Rate -->
+          <div class="col-md-6">
+            {{ form.bounce_rates.label(class="form-label small fw-semibold") }}
+            {{ form.bounce_rates(class="form-control" + (" is-invalid" if form.bounce_rates.errors else "")) }}
+            {% if form.bounce_rates.errors %}
+              <div class="invalid-feedback">{{ form.bounce_rates.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.bounce_rates.description }} (Historical Mean: 0.022)</div>
+          </div>
+
+          <!-- Exit Rate -->
+          <div class="col-md-6">
+            {{ form.exit_rates.label(class="form-label small fw-semibold") }}
+            {{ form.exit_rates(class="form-control" + (" is-invalid" if form.exit_rates.errors else "")) }}
+            {% if form.exit_rates.errors %}
+              <div class="invalid-feedback">{{ form.exit_rates.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.exit_rates.description }} (Historical Mean: 0.043)</div>
+          </div>
+        </div>
+
+        <!-- Group 3: Temporal, Technical & Categorical Dimensions -->
+        <h3 class="h6 fw-bold text-uppercase text-muted border-bottom pb-2 mb-3">
+          3. Session Context & Environmental Factors
+        </h3>
+        <div class="row g-3 mb-4">
+          <!-- Month -->
+          <div class="col-md-3">
+            {{ form.month.label(class="form-label small fw-semibold") }}
+            {{ form.month(class="form-select" + (" is-invalid" if form.month.errors else "")) }}
+            {% if form.month.errors %}
+              <div class="invalid-feedback">{{ form.month.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Visitor Type -->
+          <div class="col-md-3">
+            {{ form.visitor_type.label(class="form-label small fw-semibold") }}
+            {{ form.visitor_type(class="form-select" + (" is-invalid" if form.visitor_type.errors else "")) }}
+            {% if form.visitor_type.errors %}
+              <div class="invalid-feedback">{{ form.visitor_type.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Weekend -->
+          <div class="col-md-3">
+            {{ form.weekend.label(class="form-label small fw-semibold") }}
+            {{ form.weekend(class="form-select" + (" is-invalid" if form.weekend.errors else "")) }}
+            {% if form.weekend.errors %}
+              <div class="invalid-feedback">{{ form.weekend.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Traffic Type -->
+          <div class="col-md-3">
+            {{ form.traffic_type.label(class="form-label small fw-semibold") }}
+            {{ form.traffic_type(class="form-select" + (" is-invalid" if form.traffic_type.errors else "")) }}
+            {% if form.traffic_type.errors %}
+              <div class="invalid-feedback">{{ form.traffic_type.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Operating System -->
+          <div class="col-md-4">
+            {{ form.operating_systems.label(class="form-label small fw-semibold") }}
+            {{ form.operating_systems(class="form-select" + (" is-invalid" if form.operating_systems.errors else "")) }}
+            {% if form.operating_systems.errors %}
+              <div class="invalid-feedback">{{ form.operating_systems.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Browser -->
+          <div class="col-md-4">
+            {{ form.browser.label(class="form-label small fw-semibold") }}
+            {{ form.browser(class="form-select" + (" is-invalid" if form.browser.errors else "")) }}
+            {% if form.browser.errors %}
+              <div class="invalid-feedback">{{ form.browser.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Region -->
+          <div class="col-md-4">
+            {{ form.region.label(class="form-label small fw-semibold") }}
+            {{ form.region(class="form-select" + (" is-invalid" if form.region.errors else "")) }}
+            {% if form.region.errors %}
+              <div class="invalid-feedback">{{ form.region.errors[0] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Group 4: Operational Decision Cutoff -->
+        <h3 class="h6 fw-bold text-uppercase text-muted border-bottom pb-2 mb-3">
+          4. Operational Threshold & Metadata
+        </h3>
+        <div class="row g-3 mb-4">
+          <!-- Decision Threshold -->
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center">
+              {{ form.decision_threshold.label(class="form-label small fw-semibold") }}
+              <span class="badge bg-primary px-2" id="thresholdDisplayVal">40%</span>
+            </div>
+            {{ form.decision_threshold(class="form-range", type="range", step="0.05", min="0.10", max="0.90") }}
+            {% if form.decision_threshold.errors %}
+              <div class="text-danger small">{{ form.decision_threshold.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">
+              Lower threshold (e.g. 0.35) captures more potential buyers (higher recall). Higher threshold (e.g. 0.60) produces fewer false alarms (higher precision).
+            </div>
+          </div>
+
+          <!-- Session Label -->
+          <div class="col-md-6">
+            {{ form.session_summary.label(class="form-label small fw-semibold") }}
+            {{ form.session_summary(class="form-control" + (" is-invalid" if form.session_summary.errors else ""), placeholder="e.g. Q4 Google Ads Cart Campaign") }}
+            {% if form.session_summary.errors %}
+              <div class="invalid-feedback">{{ form.session_summary.errors[0] }}</div>
+            {% endif %}
+            <div class="form-text small">{{ form.session_summary.description }}</div>
+          </div>
+        </div>
+
+        <!-- Form Submit Bar -->
+        <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+          <span class="text-muted small">
+            <i class="bi bi-shield-check text-success"></i> Server-side WTForms validation & safety checks active
+          </span>
+          <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm" id="predictSubmitBtn">
+            <i class="bi bi-cpu me-1"></i> Calculate Conversion Probability
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
+{% endblock %}

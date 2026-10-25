@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Internal Server Error{% endblock %}
+{% block page_title %}<i class="bi bi-slash-circle text-danger"></i> 500 Server Error{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 text-center">
+  <div class="content-card py-5 px-3 mx-auto" style="max-width: 580px;">
+    <div class="stat-icon rose mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
+      <i class="bi bi-server"></i>
+    </div>
+    <h2 class="h3 fw-bold text-dark mb-2">Internal Server Error</h2>
+    <p class="text-muted small mb-4">
+      An unexpected internal exception occurred while processing the analytics or inference request. The error details have been logged safely.
+    </p>
+    <div class="d-flex justify-content-center gap-2">
+      <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary btn-sm px-3">
+        <i class="bi bi-speedometer2 me-1"></i> Return to Dashboard
+      </a>
+      <a href="{{ url_for('prediction.predict') }}" class="btn btn-outline-secondary btn-sm px-3">
+        <i class="bi bi-calculator me-1"></i> Prediction Form
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

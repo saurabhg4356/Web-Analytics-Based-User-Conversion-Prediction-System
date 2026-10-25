@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-speedometer2 text-primary"></i> E-Commerce Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <!-- Interactive Filter Bar -->
+  <div class="content-card mb-4">
+    <div class="content-card-body py-3">
+      <form id="dashboardFilterForm" class="row g-2 align-items-center">
+        <div class="col-12 col-md-auto">
+          <span class="fw-bold small text-secondary d-flex align-items-center gap-1">
+            <i class="bi bi-funnel"></i> Slicing Filters:
+          </span>
+        </div>
+
+        <!-- Month Filter -->
+        <div class="col-6 col-sm-3 col-md-2">
+          <label class="visually-hidden" for="filterMonth">Month</label>
+          <select class="form-select form-select-sm" id="filterMonth">
+            <option value="all" {% if data.active_filters.month == 'all' %}selected{% endif %}>All Months</option>
+            <option value="Feb" {% if data.active_filters.month|lower == 'feb' %}selected{% endif %}>February</option>
+            <option value="Mar" {% if data.active_filters.month|lower == 'mar' %}selected{% endif %}>March</option>
+            <option value="May" {% if data.active_filters.month|lower == 'may' %}selected{% endif %}>May</option>
+            <option value="June" {% if data.active_filters.month|lower == 'june' %}selected{% endif %}>June</option>
+            <option value="Jul" {% if data.active_filters.month|lower == 'jul' %}selected{% endif %}>July</option>
+            <option value="Aug" {% if data.active_filters.month|lower == 'aug' %}selected{% endif %}>August</option>
+            <option value="Sep" {% if data.active_filters.month|lower == 'sep' %}selected{% endif %}>September</option>
+            <option value="Oct" {% if data.active_filters.month|lower == 'oct' %}selected{% endif %}>October</option>
+            <option value="Nov" {% if data.active_filters.month|lower == 'nov' %}selected{% endif %}>November</option>
+            <option value="Dec" {% if data.active_filters.month|lower == 'dec' %}selected{% endif %}>December</option>
+          </select>
+        </div>
+
+        <!-- Visitor Type Filter -->
+        <div class="col-6 col-sm-3 col-md-2">
+          <label class="visually-hidden" for="filterVisitor">Visitor Type</label>
+          <select class="form-select form-select-sm" id="filterVisitor">
+            <option value="all" {% if data.active_filters.visitor_type == 'all' %}selected{% endif %}>All Visitors</option>
+            <option value="Returning_Visitor" {% if data.active_filters.visitor_type|lower == 'returning_visitor' %}selected{% endif %}>Returning Visitor</option>
+            <option value="New_Visitor" {% if data.active_filters.visitor_type|lower == 'new_visitor' %}selected{% endif %}>New Visitor</option>
+            <option value="Other" {% if data.active_filters.visitor_type|lower == 'other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+
+        <!-- Traffic Type Filter -->
+        <div class="col-6 col-sm-3 col-md-2">
+          <label class="visually-hidden" for="filterTraffic">Traffic Channel</label>
+          <select class="form-select form-select-sm" id="filterTraffic">
+            <option value="all" {% if data.active_filters.traffic_type == 'all' %}selected{% endif %}>All Traffic Types</option>
+            {% for t in range(1, 21) %}
+              <option value="{{ t }}" {% if data.active_filters.traffic_type == t|string %}selected{% endif %}>Traffic {{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Weekend Filter -->
+        <div class="col-6 col-sm-3 col-md-2">
+          <label class="visually-hidden" for="filterWeekend">Weekend Status</label>
+          <select class="form-select form-select-sm" id="filterWeekend">
+            <option value="all" {% if data.active_filters.weekend == 'all' %}selected{% endif %}>All Days</option>
+            <option value="false" {% if data.active_filters.weekend == 'false' %}selected{% endif %}>Weekday (Mon-Fri)</option>
+            <option value="true" {% if data.active_filters.weekend == 'true' %}selected{% endif %}>Weekend (Sat-Sun)</option>
+          </select>
+        </div>
+
+        <div class="col-auto ms-auto d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="resetFiltersBtn" title="Reset all filters">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+          <div id="dashboardLoadingState" class="d-none spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Primary Real Data KPIs -->
+  <div class="row g-3 mb-4">
+    <!-- Total Sessions -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Analyzed Sessions</span>
+          <div class="stat-icon slate"><i class="bi bi-people"></i></div>
+        </div>
+        <div class="stat-value" id="kpiTotalSessions">{{ "{:,}".format(data.kpis.total_sessions) }}</div>
+        <p class="stat-subtext">Historical website visits</p>
+      </div>
+    </div>
+
+    <!-- Conversions -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Actual Purchases</span>
+          <div class="stat-icon green"><i class="bi bi-cart-check"></i></div>
+        </div>
+        <div class="stat-value text-success" id="kpiConversions">{{ "{:,}".format(data.kpis.conversions) }}</div>
+        <p class="stat-subtext">Revenue = True outcomes</p>
+      </div>
+    </div>
+
+    <!-- Conversion Rate -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Conversion Rate</span>
+          <div class="stat-icon blue"><i class="bi bi-percent"></i></div>
+        </div>
+        <div class="stat-value text-primary" id="kpiConversionRate">{{ data.kpis.conversion_rate }}%</div>
+        <p class="stat-subtext">Benchmark baseline</p>
+      </div>
+    </div>
+
+    <!-- Non-Conversions -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Non-Purchases</span>
+          <div class="stat-icon rose"><i class="bi bi-cart-x"></i></div>
+        </div>
+        <div class="stat-value text-danger" id="kpiNonConversions">{{ "{:,}".format(data.kpis.non_conversions) }}</div>
+        <p class="stat-subtext">Window shoppers & exits</p>
+      </div>
+    </div>
+
+    <!-- New vs Returning Ratio -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Returning Visitors</span>
+          <div class="stat-icon amber"><i class="bi bi-arrow-repeat"></i></div>
+        </div>
+        <div class="stat-value" id="kpiReturningVisitors">{{ "{:,}".format(data.kpis.returning_visitors) }}</div>
+        <p class="stat-subtext">New: <span id="kpiNewVisitors">{{ "{:,}".format(data.kpis.new_visitors) }}</span></p>
+      </div>
+    </div>
+
+    <!-- Avg Product Duration -->
+    <div class="col-sm-6 col-xl-2">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Avg Product Time</span>
+          <div class="stat-icon teal"><i class="bi bi-stopwatch"></i></div>
+        </div>
+        <div class="stat-value text-info" id="kpiAvgDuration">{{ data.kpis.avg_product_duration_secs }}s</div>
+        <p class="stat-subtext">~{{ data.kpis.avg_product_duration_mins }} mins per session</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Charts Grid -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 1: Outcome Distribution -->
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-pie-chart text-primary"></i> Session Conversion Split
+          </h2>
+          <span class="badge bg-light text-muted border">Imbalance Ratio</span>
+        </div>
+        <div class="content-card-body">
+          <div style="height: 240px; position: relative;">
+            <canvas id="outcomeChart"></canvas>
+          </div>
+          <div class="text-center small text-muted mt-2">
+            Historical benchmark: ~15.5% purchases vs 84.5% non-purchases.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Monthly Conversion Rate -->
+    <div class="col-lg-8">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-graph-up text-primary"></i> Historical Conversion Rate (%) by Month
+          </h2>
+          <span class="badge bg-primary-subtle text-primary border">Seasonality Curve</span>
+        </div>
+        <div class="content-card-body">
+          <div style="height: 240px;">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 3: Conversion by Visitor Type -->
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-person-check text-primary"></i> Visitor Type Conversion
+          </h2>
+          <span class="badge bg-info-subtle text-info border">Segment Rate</span>
+        </div>
+        <div class="content-card-body">
+          <div style="height: 220px;">
+            <canvas id="visitorChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: Traffic Type Conversion (Top Channels) -->
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-signpost-split text-teal"></i> Top Traffic Channels
+          </h2>
+          <span class="badge bg-teal-subtle text-teal border">Channel ROI</span>
+        </div>
+        <div class="content-card-body">
+          <div style="height: 220px;">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 5: Weekend vs Weekday Conversion -->
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-calendar3 text-primary"></i> Day of Week Dynamics
+          </h2>
+          <span class="badge bg-light text-muted border">Weekend vs Weekday</span>
+        </div>
+        <div class="content-card-body">
+          <div style="height: 220px;">
+            <canvas id="weekendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data-Driven Business Recommendations Section -->
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-lightbulb text-warning"></i> Data-Grounded Strategic Recommendations
+      </h2>
+      <span class="badge bg-warning-subtle text-warning-emphasis border">Evidence-Based Insights</span>
+    </div>
+    <div class="content-card-body">
+      <div class="row g-3">
+        {% for rec in data.recommendations %}
+          <div class="col-lg-6">
+            <div class="recommendation-card {{ rec.severity }}">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <h3 class="h6 fw-bold mb-0 text-dark">{{ rec.title }}</h3>
+                <span class="badge bg-white text-dark border small">{{ rec.badge }}</span>
+              </div>
+              <div class="small fw-semibold text-primary mb-2">Segment Evidence: {{ rec.metric }}</div>
+              <p class="small text-secondary mb-0">{{ rec.description }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Initial Chart Data in JSON for Dashboard Script -->
+<script id="initialChartData" type="application/json">
+  {{ data.charts | tojson | safe }}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

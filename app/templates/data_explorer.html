@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Data Explorer - Web Analytics Conversion System{% endblock %}
+{% block page_title %}<i class="bi bi-table text-primary"></i> Dataset Explorer (UCI Online Shoppers){% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <!-- Metadata Summary Card -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Total Records</span>
+          <div class="stat-icon slate"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(total_rows) }}</div>
+        <p class="stat-subtext">Active filter match: {{ "{:,}".format(filtered_rows) }}</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Dataset Columns</span>
+          <div class="stat-icon blue"><i class="bi bi-layout-three-columns"></i></div>
+        </div>
+        <div class="stat-value">18</div>
+        <p class="stat-subtext">17 Features + 1 Revenue Target</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Missing Values</span>
+          <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+        </div>
+        <div class="stat-value text-success">0</div>
+        <p class="stat-subtext">100% complete data schema</p>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Leakage Guard</span>
+          <div class="stat-icon rose"><i class="bi bi-shield-x"></i></div>
+        </div>
+        <div class="stat-value text-danger">Active</div>
+        <p class="stat-subtext">PageValues filtered from ML model</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slicing Filters & CSV Download -->
+  <div class="content-card mb-4">
+    <div class="content-card-body py-3">
+      <form method="GET" action="{{ url_for('data_explorer.data_explorer') }}" class="row g-2 align-items-center justify-content-between">
+        <div class="col-12 col-md-8">
+          <div class="row g-2">
+            <!-- Month Filter -->
+            <div class="col-sm-4">
+              <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if month_filter == 'all' %}selected{% endif %}>All Months</option>
+                {% for m in ['Feb', 'Mar', 'May', 'June', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                  <option value="{{ m }}" {% if month_filter|lower == m|lower %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Revenue Filter -->
+            <div class="col-sm-4">
+              <select name="revenue" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if revenue_filter == 'all' %}selected{% endif %}>All Outcomes</option>
+                <option value="true" {% if revenue_filter|lower == 'true' %}selected{% endif %}>Revenue: True (Purchased)</option>
+                <option value="false" {% if revenue_filter|lower == 'false' %}selected{% endif %}>Revenue: False (No Purchase)</option>
+              </select>
+            </div>
+
+            <!-- Visitor Type Filter -->
+            <div class="col-sm-4">
+              <select name="visitor_type" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if visitor_filter == 'all' %}selected{% endif %}>All Visitor Types</option>
+                <option value="Returning_Visitor" {% if visitor_filter|lower == 'returning_visitor' %}selected{% endif %}>Returning Visitor</option>
+                <option value="New_Visitor" {% if visitor_filter|lower == 'new_visitor' %}selected{% endif %}>New Visitor</option>
+                <option value="Other" {% if visitor_filter|lower == 'other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0 d-flex gap-2 justify-content-md-end">
+          {% if month_filter != 'all' or revenue_filter != 'all' or visitor_filter != 'all' %}
+            <a href="{{ url_for('data_explorer.data_explorer') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+          {% endif %}
+          <a href="{{ url_for('data_explorer.download_sample_csv', month=month_filter) }}" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+            <i class="bi bi-download"></i> Download CSV Sample
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Collapsible Column Schema Dictionary -->
+  <div class="accordion mb-4" id="schemaAccordion">
+    <div class="accordion-item content-card border">
+      <h2 class="accordion-header" id="headingSchema">
+        <button class="accordion-button collapsed py-2 px-3 fw-bold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSchema" aria-expanded="false" aria-controls="collapseSchema">
+          <i class="bi bi-info-circle text-primary me-2"></i> View Dataset Column Schema & Feature Dictionary (18 Columns)
+        </button>
+      </h2>
+      <div id="collapseSchema" class="accordion-collapse collapse" aria-labelledby="headingSchema" data-bs-parent="#schemaAccordion">
+        <div class="accordion-body p-0">
+          <div class="table-responsive">
+            <table class="table custom-table mb-0">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Type</th>
+                  <th>Role</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for col in columns_info %}
+                  <tr>
+                    <td><strong>{{ col.name }}</strong></td>
+                    <td class="small text-muted">{{ col.type }}</td>
+                    <td>
+                      {% if col.role == 'Target' %}
+                        <span class="badge bg-success">Target</span>
+                      {% elif col.role == 'Leakage Excluded' %}
+                        <span class="badge badge-leakage">Leakage Excluded</span>
+                      {% else %}
+                        <span class="badge bg-primary-subtle text-primary border">Feature</span>
+                      {% endif %}
+                    </td>
+                    <td class="small text-secondary">{{ col.description }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginated Records Table -->
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-list-ul text-primary"></i> Session Records (Page {{ current_page }} of {{ total_pages }})
+      </h2>
+      <span class="badge bg-light text-muted border">Showing 25 rows per page</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table table-hover table-striped mb-0 text-nowrap">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Month</th>
+            <th>Visitor Type</th>
+            <th>Product Pages</th>
+            <th>Product Dur (s)</th>
+            <th>Bounce Rate</th>
+            <th>Exit Rate</th>
+            <th>Admin Pages</th>
+            <th>Info Pages</th>
+            <th>OS / Browser</th>
+            <th>Traffic</th>
+            <th>Weekend</th>
+            <th>PageValues</th>
+            <th>Revenue Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+            <tr>
+              <td class="small text-muted">{{ loop.index + (current_page - 1) * 25 }}</td>
+              <td><span class="badge bg-light text-dark border">{{ r.Month }}</span></td>
+              <td class="small">{{ r.VisitorType.replace('_', ' ') }}</td>
+              <td><strong>{{ r.ProductRelated }}</strong></td>
+              <td class="small">{{ "%.0f"|format(r.ProductRelated_Duration) }}s</td>
+              <td class="small">{{ "%.3f"|format(r.BounceRates) }}</td>
+              <td class="small">{{ "%.3f"|format(r.ExitRates) }}</td>
+              <td class="small">{{ r.Administrative }}</td>
+              <td class="small">{{ r.Informational }}</td>
+              <td class="small text-muted">OS {{ r.OperatingSystems }} / B {{ r.Browser }}</td>
+              <td class="small">T {{ r.TrafficType }}</td>
+              <td>
+                {% if r.Weekend %}
+                  <span class="badge bg-info-subtle text-info border small">Weekend</span>
+                {% else %}
+                  <span class="text-muted small">Weekday</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-danger-subtle text-danger border" title="Post-hoc target leakage metric">{{ "%.2f"|format(r.PageValues) }}</span>
+              </td>
+              <td>
+                {% if r.Revenue %}
+                  <span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle"></i> True (Purchase)</span>
+                {% else %}
+                  <span class="badge bg-light text-muted border px-2 py-1"><i class="bi bi-x-circle"></i> False</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if total_pages > 1 %}
+    <div class="content-card-body border-top py-3">
+      <nav aria-label="Dataset Explorer Pagination">
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          <li class="page-item {{ 'disabled' if current_page <= 1 }}">
+            <a class="page-link" href="{{ url_for('data_explorer.data_explorer', page=current_page-1, month=month_filter, revenue=revenue_filter, visitor_type=visitor_filter) }}">Previous</a>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ current_page }} of {{ total_pages }}</span>
+          </li>
+          <li class="page-item {{ 'disabled' if current_page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('data_explorer.data_explorer', page=current_page+1, month=month_filter, revenue=revenue_filter, visitor_type=visitor_filter) }}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

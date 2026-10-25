@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Overview - Web Analytics-Based User Conversion Prediction System{% endblock %}
+{% block page_title %}<i class="bi bi-grid-1x2-fill text-primary"></i> System Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+  <!-- Executive Hero Section -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff;">
+    <div class="card-body p-4 p-lg-5">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small mb-3">
+            <i class="bi bi-shield-check"></i> Production-Style Machine Learning & E-Commerce Web Analytics
+          </div>
+          <h1 class="display-6 fw-bold mb-3 tracking-tight text-white">
+            Web Analytics-Based User Conversion Prediction System
+          </h1>
+          <p class="lead text-light text-opacity-75 mb-4" style="max-width: 680px; font-size: 1.05rem;">
+            Estimates online shopping purchase probabilities from real-time visitor behavioral signals. Analyzes session duration, bounce hazards, catalog depth, and traffic sources to optimize digital marketing funnels.
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+              <i class="bi bi-speedometer2 me-1"></i> Live Analytics Dashboard
+            </a>
+            <a href="{{ url_for('prediction.predict') }}" class="btn btn-light px-4 py-2 fw-semibold shadow-sm text-dark">
+              <i class="bi bi-calculator me-1"></i> Predict Conversion Probability
+            </a>
+            <a href="{{ url_for('evaluation.evaluation') }}" class="btn btn-outline-light px-4 py-2 fw-semibold">
+              <i class="bi bi-cpu me-1"></i> Model Diagnostics
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Stats Glass Card -->
+        <div class="col-lg-5">
+          <div class="card bg-white bg-opacity-10 border border-white border-opacity-10 rounded-3 p-3 backdrop-blur shadow">
+            <div class="text-uppercase small fw-bold text-info mb-3 tracking-wider">
+              <i class="bi bi-activity me-1"></i> Operational Pipeline Summary
+            </div>
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="p-2 rounded bg-black bg-opacity-20 border border-white border-opacity-10">
+                  <div class="small text-light text-opacity-75">Dataset Sessions</div>
+                  <div class="h4 fw-bold mb-0 text-white">12,330</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 rounded bg-black bg-opacity-20 border border-white border-opacity-10">
+                  <div class="small text-light text-opacity-75">Baseline Conversion</div>
+                  <div class="h4 fw-bold mb-0 text-white">15.5%</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 rounded bg-black bg-opacity-20 border border-white border-opacity-10">
+                  <div class="small text-light text-opacity-75">Champion Model</div>
+                  <div class="h6 fw-bold mb-0 text-info text-truncate">{{ champion_model }}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 rounded bg-black bg-opacity-20 border border-white border-opacity-10">
+                  <div class="small text-light text-opacity-75">Hold-out ROC-AUC</div>
+                  <div class="h4 fw-bold mb-0 text-white">{{ "%.3f"|format(roc_auc) }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 small text-light text-opacity-50 fst-italic">
+              * PageValues excluded to eliminate target leakage during live browsing prediction.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Business Problem & Architecture Section -->
+  <div class="row g-4 mb-4">
+    <!-- Business Problem Description -->
+    <div class="col-lg-6">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-briefcase text-primary"></i> The Business Problem
+          </h2>
+          <span class="badge bg-danger-subtle text-danger border">Funnel Drop-off Challenge</span>
+        </div>
+        <div class="content-card-body">
+          <p class="text-secondary">
+            In modern e-commerce, digital marketing campaigns drive massive quantities of visitor traffic, yet typically only <strong>10% to 16%</strong> of browsing sessions result in an actual financial purchase.
+          </p>
+          <p class="text-secondary">
+            Without automated session qualification, marketing spend is squandered uniformly across all visitors. Businesses face two severe costs:
+          </p>
+          <ul class="text-secondary mb-3">
+            <li><strong>False Negatives (Missed Revenue):</strong> An interested visitor hesitates on checkout and leaves because no personalized incentive was offered in time.</li>
+            <li><strong>False Positives (Wasted Margin):</strong> Costly discount codes are shown to visitors who would have purchased at full price anyway, eroding profit margins.</li>
+          </ul>
+          <p class="text-secondary mb-0">
+            <strong>ConvertSense AI</strong> calculates calibrated purchase probabilities during active visitor sessions, empowering CRM systems to trigger high-impact interventions precisely when needed.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Machine Learning & Leakage Guard -->
+    <div class="col-lg-6">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <h2 class="content-card-title">
+            <i class="bi bi-shield-exclamation text-warning"></i> Methodological Rigor & Target Leakage Prevention
+          </h2>
+          <span class="badge bg-warning-subtle text-warning-emphasis border">Data Science Best Practice</span>
+        </div>
+        <div class="content-card-body">
+          <div class="alert alert-warning border-warning border-opacity-25 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <strong>Why PageValues is Excluded:</strong> In Google Analytics, the <code>PageValues</code> metric averages transaction revenues backwards across pages visited. Including it artificially inflates test accuracy (AUC > 0.90) because it carries post-transaction ground truth!
+          </div>
+          <p class="text-secondary small">
+            To build a genuine pre-purchase production pipeline, we enforce strict isolation:
+          </p>
+          <div class="row g-2 small">
+            <div class="col-sm-6">
+              <div class="p-2 border rounded bg-light">
+                <strong class="d-block text-dark">Stratified Split (80/20)</strong>
+                <span class="text-muted">Preserves exact 15.5% purchase minority proportion across train and test sets.</span>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="p-2 border rounded bg-light">
+                <strong class="d-block text-dark">Deduplication</strong>
+                <span class="text-muted">125 identical sessions removed to prevent duplicate records appearing across splits.</span>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="p-2 border rounded bg-light">
+                <strong class="d-block text-dark">Categorical Safety</strong>
+                <span class="text-muted">OperatingSystems, Browser, Region & TrafficType treated categorically via One-Hot Encoding.</span>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="p-2 border rounded bg-light">
+                <strong class="d-block text-dark">Configurable Cutoff</strong>
+                <span class="text-muted">Tunable decision threshold (default 0.40) optimizes recall over pure accuracy.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key System Capabilities -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-header">
+          <span class="stat-title">Interactive Dashboard</span>
+          <div class="stat-icon blue"><i class="bi bi-bar-chart-line"></i></div>
+        </div>
+        <h3 class="h5 fw-bold text-dark mt-2">Dynamic Session Slicing</h3>
+        <p class="text-muted small mb-3">
+          Slice historical traffic across month, visitor type, traffic channel, and weekend dimensions. View real-time calculated conversion rates and duration distributions.
+        </p>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-sm btn-outline-primary">
+          Explore Dashboard <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-header">
+          <span class="stat-title">ML Inference Engine</span>
+          <div class="stat-icon green"><i class="bi bi-lightning-charge"></i></div>
+        </div>
+        <h3 class="h5 fw-bold text-dark mt-2">Instant Session Scoring</h3>
+        <p class="text-muted small mb-3">
+          Enter browsing metrics or test pre-configured scenarios. Returns calibrated purchase probability percentage, threshold comparison, and behavioral risk explanations.
+        </p>
+        <a href="{{ url_for('prediction.predict') }}" class="btn btn-sm btn-outline-success">
+          Run Prediction <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-header">
+          <span class="stat-title">Model Diagnostics</span>
+          <div class="stat-icon teal"><i class="bi bi-sliders"></i></div>
+        </div>
+        <h3 class="h5 fw-bold text-dark mt-2">Evaluation & Simulator</h3>
+        <p class="text-muted small mb-3">
+          Review 5-fold cross-validation metrics across Logistic Regression, Random Forest, and HistGradientBoosting. Simulate precision vs recall trade-offs across cutoffs.
+        </p>
+        <a href="{{ url_for('evaluation.evaluation') }}" class="btn btn-sm btn-outline-info">
+          View Diagnostics <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technology Stack Badges -->
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2 class="content-card-title">
+        <i class="bi bi-stack text-primary"></i> Production Technology Architecture
+      </h2>
+      <span class="badge bg-secondary-subtle text-secondary border">Clean Modular Architecture</span>
+    </div>
+    <div class="content-card-body">
+      <div class="row g-3 text-center">
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-filetype-py fs-2 text-primary d-block mb-1"></i>
+            <strong class="d-block small">Python 3</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">Core Runtime</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-server fs-2 text-dark d-block mb-1"></i>
+            <strong class="d-block small">Flask 3</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">Application Factory</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-cpu fs-2 text-success d-block mb-1"></i>
+            <strong class="d-block small">scikit-learn</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">Pipelines & CV</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-database fs-2 text-info d-block mb-1"></i>
+            <strong class="d-block small">SQLAlchemy</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">SQLite Persistence</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-pie-chart fs-2 text-warning d-block mb-1"></i>
+            <strong class="d-block small">Chart.js</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">Client Visuals</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-3 border rounded bg-light">
+            <i class="bi bi-bootstrap fs-2 text-purple d-block mb-1" style="color: #6f42c1;"></i>
+            <strong class="d-block small">Bootstrap 5</strong>
+            <span class="text-muted" style="font-size: 0.72rem;">Responsive UI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

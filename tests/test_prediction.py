@@ -1,8 +1,10 @@
 """
 tests/test_prediction.py
-Tests for ML model inference, probability validity, DB persistence, and prediction endpoints.
+Tests for ML model inference, probability validity, DB persistence,
+input validation, edge cases, and REST API error hardening.
 """
 
+from unittest.mock import patch
 from app.models import PredictionHistory
 
 
@@ -72,10 +74,70 @@ def test_api_predict_empty_payload(client):
     assert "error" in response.get_json()
 
 
-def test_api_predict_invalid_data(client, valid_session_data):
-    """Verifies API rejects non-numeric duration or out-of-range values with 422 error."""
-    invalid_data = valid_session_data.copy()
-    invalid_data["ProductRelated_Duration"] = "not_a_valid_number"
-    response = client.post("/api/predict", json=invalid_data)
+def test_api_predict_invalid_content_type(client):
+    """Verifies API rejects non-JSON Content-Type with 415 error."""
+    response = client.post("/api/predict", data="plain text data", content_type="text/plain")
+    assert response.status_code == 415
+    assert "Unsupported Media Type" in response.get_json()["error"]
+
+
+def test_api_predict_missing_feature(client, valid_session_data):
+    """Verifies API rejects requests missing required feature columns with 422 error."""
+    incomplete_data = valid_session_data.copy()
+    del incomplete_data["ProductRelated"]
+    response = client.post("/api/predict", json=incomplete_data)
     assert response.status_code == 422
-    assert "Validation Error" in response.get_json()["error"]
+    assert "Missing required" in response.get_json()["error"]
+
+
+def test_api_predict_nan_rejected(client, valid_session_data):
+    """Verifies API rejects NaN values with 422 error."""
+    nan_data = valid_session_data.copy()
+    nan_data["ExitRates"] = float("nan")
+    response = client.post("/api/predict", json=nan_data)
+    assert response.status_code == 422
+    assert "non-finite" in response.get_json()["error"]
+
+
+def test_api_predict_negative_counts_rejected(client, valid_session_data):
+    """Verifies API rejects negative counts or durations with 422 error."""
+    negative_data = valid_session_data.copy()
+    negative_data["Administrative"] = -3
+    response = client.post("/api/predict", json=negative_data)
+    assert response.status_code == 422
+    assert "cannot be negative" in response.get_json()["error"]
+
+
+def test_api_predict_out_of_bounds_rate_rejected(client, valid_session_data):
+    """Verifies API rejects rates outside [0.0, 1.0] with 422 error."""
+    invalid_rate = valid_session_data.copy()
+    invalid_rate["BounceRates"] = 1.25
+    response = client.post("/api/predict", json=invalid_rate)
+    assert response.status_code == 422
+    assert "must be between 0.0 and 1.0" in response.get_json()["error"]
+
+
+def test_api_predict_unsupported_category_rejected(client, valid_session_data):
+    """Verifies API rejects unsupported categorical values with 422 error."""
+    invalid_cat = valid_session_data.copy()
+    invalid_cat["Month"] = "InvalidMonth"
+    response = client.post("/api/predict", json=invalid_cat)
+    assert response.status_code == 422
+    assert "Unsupported Month" in response.get_json()["error"]
+
+
+def test_api_predict_invalid_threshold_rejected(client, valid_session_data):
+    """Verifies API rejects invalid decision thresholds without silent clamping."""
+    invalid_th = valid_session_data.copy()
+    invalid_th["decision_threshold"] = 1.85  # Out of bounds (> 0.99)
+    response = client.post("/api/predict", json=invalid_th)
+    assert response.status_code == 422
+    assert "Decision threshold must be between 0.01 and 0.99" in response.get_json()["error"]
+
+
+def test_api_predict_model_missing_handled_safely(client, valid_session_data):
+    """Verifies missing model artifact produces safe 503 response without stack trace."""
+    with patch("app.services.model_service.ModelService.get_pipeline", side_effect=FileNotFoundError("Artifact missing")):
+        response = client.post("/api/predict", json=valid_session_data)
+        assert response.status_code == 503
+        assert "Model Service Unavailable" in response.get_json()["error"]

@@ -1,0 +1,22 @@
+# Render Deployment Specification Blueprint
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: web-analytics-conversion-prediction
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn wsgi:app"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: DEFAULT_DECISION_THRESHOLD
+        value: "0.40"

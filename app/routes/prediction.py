@@ -60,16 +60,34 @@ def predict():
     return render_template("predict.html", form=form, prediction_result=prediction_result)
 
 
+# Note: @csrf.exempt is applied exclusively to the programmatic REST API endpoint
+# to allow external microservices, cURL, and automated webhooks to submit JSON payloads
+# without session cookies. Browser-based users interact through the /predict route above,
+# which strictly enforces CSRF token verification via Flask-WTF.
 @prediction_bp.route("/api/predict", methods=["POST"])
 @csrf.exempt
 def api_predict():
     """Programmatic REST API endpoint for real-time web session scoring."""
+    # Enforce JSON Content-Type
+    if not request.is_json:
+        return jsonify({
+            "error": "Unsupported Media Type. Request Content-Type must be 'application/json'."
+        }), 415
+
+    # Guard against oversized payloads
+    if request.content_length and request.content_length > 100 * 1024:
+        return jsonify({
+            "error": "Payload Too Large. API request body must be under 100 KB."
+        }), 413
+
     data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "Invalid or missing JSON payload in request body."}), 400
+    if data is None or not isinstance(data, dict) or len(data) == 0:
+        return jsonify({
+            "error": "Invalid or missing JSON payload in request body."
+        }), 400
 
     threshold = data.get("decision_threshold", 0.40)
-    session_label = data.get("session_summary", "API Session")
+    session_label = str(data.get("session_summary", "API Session"))[:100]
 
     try:
         result = PredictionService.predict_session(
@@ -80,5 +98,12 @@ def api_predict():
         return jsonify(result), 200
     except ValueError as ve:
         return jsonify({"error": f"Validation Error: {str(ve)}"}), 422
+    except FileNotFoundError as fe:
+        return jsonify({
+            "error": "Model Service Unavailable. Model artifact could not be located on the server.",
+            "details": str(fe)
+        }), 503
     except Exception as e:
-        return jsonify({"error": f"Inference Error: {str(e)}"}), 500
+        return jsonify({
+            "error": "Inference Error: An unexpected error occurred during prediction scoring."
+        }), 500

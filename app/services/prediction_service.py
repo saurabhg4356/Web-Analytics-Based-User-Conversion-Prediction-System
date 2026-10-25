@@ -29,24 +29,94 @@ ORDERED_COLUMNS = NUMERICAL_COLS + CATEGORICAL_COLS
 class PredictionService:
     @staticmethod
     def format_input_dataframe(raw_input: dict) -> pd.DataFrame:
-        """Converts raw input dictionary into properly formatted DataFrame matching training schema."""
+        """Converts and strictly validates raw input dictionary into properly formatted DataFrame matching training schema."""
         row_dict = {}
 
-        # Parse numerical attributes
+        # 1. Validate numerical attributes
         for col in NUMERICAL_COLS:
-            val = raw_input.get(col, 0.0)
+            if col not in raw_input or raw_input[col] is None or raw_input[col] == "":
+                raise ValueError(f"Missing required numerical feature: '{col}'.")
+            val = raw_input[col]
             try:
                 num_val = float(val)
-                if math.isnan(num_val) or math.isinf(num_val):
-                    raise ValueError(f"Feature '{col}' contains non-finite numerical value.")
-                row_dict[col] = num_val
             except (ValueError, TypeError) as e:
-                raise ValueError(f"Invalid numerical value for '{col}': {val}") from e
+                raise ValueError(f"Invalid numerical value for '{col}': '{val}'. Must be a valid number.") from e
 
-        # Parse categorical attributes (convert to string)
+            if math.isnan(num_val) or math.isinf(num_val):
+                raise ValueError(f"Feature '{col}' contains non-finite numerical value (NaN or Infinity).")
+
+            # Non-negative counts and durations
+            if col in ("Administrative", "Administrative_Duration", "Informational",
+                       "Informational_Duration", "ProductRelated", "ProductRelated_Duration"):
+                if num_val < 0.0:
+                    raise ValueError(f"Feature '{col}' cannot be negative (got {num_val}).")
+
+            # Rates and probabilities in [0.0, 1.0]
+            if col in ("BounceRates", "ExitRates", "SpecialDay"):
+                if not (0.0 <= num_val <= 1.0):
+                    raise ValueError(f"Feature '{col}' must be between 0.0 and 1.0 (got {num_val}).")
+
+            row_dict[col] = num_val
+
+        # 2. Validate categorical attributes
+        valid_months = {
+            "feb": "Feb", "mar": "Mar", "may": "May", "june": "June",
+            "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct",
+            "nov": "Nov", "dec": "Dec"
+        }
+        valid_visitor_types = {
+            "returning_visitor": "Returning_Visitor",
+            "returning visitor": "Returning_Visitor",
+            "new_visitor": "New_Visitor",
+            "new visitor": "New_Visitor",
+            "other": "Other"
+        }
+
         for col in CATEGORICAL_COLS:
-            val = raw_input.get(col, "")
-            row_dict[col] = str(val).strip()
+            if col not in raw_input or raw_input[col] is None or str(raw_input[col]).strip() == "":
+                raise ValueError(f"Missing required categorical feature: '{col}'.")
+            val = str(raw_input[col]).strip()
+
+            if col == "Month":
+                m_key = val.lower()
+                if m_key not in valid_months:
+                    raise ValueError(f"Unsupported Month '{val}'. Must be one of: {list(valid_months.values())}.")
+                row_dict[col] = valid_months[m_key]
+
+            elif col == "OperatingSystems":
+                if val not in [str(i) for i in range(1, 9)]:
+                    raise ValueError(f"Unsupported OperatingSystems '{val}'. Must be an identifier between 1 and 8.")
+                row_dict[col] = val
+
+            elif col == "Browser":
+                if val not in [str(i) for i in range(1, 14)]:
+                    raise ValueError(f"Unsupported Browser '{val}'. Must be an identifier between 1 and 13.")
+                row_dict[col] = val
+
+            elif col == "Region":
+                if val not in [str(i) for i in range(1, 10)]:
+                    raise ValueError(f"Unsupported Region '{val}'. Must be an identifier between 1 and 9.")
+                row_dict[col] = val
+
+            elif col == "TrafficType":
+                if val not in [str(i) for i in range(1, 21)]:
+                    raise ValueError(f"Unsupported TrafficType '{val}'. Must be an identifier between 1 and 20.")
+                row_dict[col] = val
+
+            elif col == "VisitorType":
+                v_key = val.lower()
+                if v_key not in valid_visitor_types:
+                    raise ValueError(f"Unsupported VisitorType '{val}'. Must be 'Returning_Visitor', 'New_Visitor', or 'Other'.")
+                row_dict[col] = valid_visitor_types[v_key]
+
+            elif col == "Weekend":
+                w_str = val.lower()
+                if w_str in ("true", "1", "yes", "weekend"):
+                    row_dict[col] = "True"
+                elif w_str in ("false", "0", "no", "weekday"):
+                    row_dict[col] = "False"
+                else:
+                    raise ValueError(f"Unsupported Weekend value '{val}'. Must be True or False.")
 
         df = pd.DataFrame([row_dict], columns=ORDERED_COLUMNS)
         return df
@@ -54,23 +124,31 @@ class PredictionService:
     @classmethod
     def predict_session(cls, raw_input: dict, threshold: float = 0.40, session_label: str = None) -> dict:
         """Executes model inference, computes probabilities, applies threshold, and logs to database."""
-        # Clean threshold
-        try:
-            threshold = float(threshold)
-            threshold = max(0.05, min(0.95, threshold))
-        except (ValueError, TypeError):
+        # 1. Strictly validate decision threshold
+        if threshold is None or threshold == "":
             threshold = 0.40
+        else:
+            try:
+                threshold_val = float(threshold)
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Invalid decision_threshold '{threshold}'. Must be a valid decimal number.") from e
 
-        # Load fitted pipeline
+            if math.isnan(threshold_val) or math.isinf(threshold_val):
+                raise ValueError("Decision threshold cannot be NaN or Infinity.")
+            if not (0.01 <= threshold_val <= 0.99):
+                raise ValueError(f"Decision threshold must be between 0.01 and 0.99 (got {threshold_val}).")
+            threshold = threshold_val
+
+        # 2. Load fitted pipeline safely
         pipeline = ModelService.get_pipeline()
         metrics = ModelService.get_metrics()
         model_version = metrics.get("model_version", "v1.0.0")
         champion_model_name = metrics.get("champion_model", "Random Forest")
 
-        # Format input dataframe
+        # 3. Format and validate input dataframe
         df_input = cls.format_input_dataframe(raw_input)
 
-        # Generate probability estimate
+        # 4. Generate probability estimate
         prob_array = pipeline.predict_proba(df_input)
         purchase_prob = float(prob_array[0, 1])
 

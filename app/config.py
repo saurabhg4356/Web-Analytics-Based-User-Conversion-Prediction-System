@@ -25,7 +25,19 @@ class Config:
     EDA_PATH = os.path.join(BASE_DIR, "reports", "eda_summary.json")
 
     # Threshold default
-    DEFAULT_DECISION_THRESHOLD = float(os.environ.get("DEFAULT_DECISION_THRESHOLD", 0.40))
+    # Maximum payload size (1 MB) to prevent resource exhaustion attacks
+    MAX_CONTENT_LENGTH = 1 * 1024 * 1024
+
+
+def _get_database_uri(default_sqlite_path: str) -> str:
+    """Returns database URI, ensuring compatibility with PostgreSQL dialect on cloud hosts (Render/Heroku)."""
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        # SQLAlchemy 2.0 requires 'postgresql://' instead of legacy 'postgres://'
+        if db_url.startswith("postgres://"):
+            return db_url.replace("postgres://", "postgresql://", 1)
+        return db_url
+    return f"sqlite:///{default_sqlite_path}"
 
 
 class DevelopmentConfig(Config):
@@ -34,10 +46,7 @@ class DevelopmentConfig(Config):
     ENV = "development"
     instance_dir = os.path.join(BASE_DIR, "instance")
     os.makedirs(instance_dir, exist_ok=True)
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(instance_dir, 'web_analytics.db')}"
-    )
+    SQLALCHEMY_DATABASE_URI = _get_database_uri(os.path.join(instance_dir, "web_analytics.db"))
 
 
 class TestingConfig(Config):
@@ -49,17 +58,14 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Production environment configuration."""
+    """Production environment configuration for Render / Cloud hosting."""
     DEBUG = False
     ENV = "production"
-    # In production, require secure secret key
-    SECRET_KEY = os.environ.get("SECRET_KEY")
+    # Ensure non-null secret key in production
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "web-analytics-production-key-fallback-2026"
     instance_dir = os.path.join(BASE_DIR, "instance")
     os.makedirs(instance_dir, exist_ok=True)
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(instance_dir, 'web_analytics.db')}"
-    )
+    SQLALCHEMY_DATABASE_URI = _get_database_uri(os.path.join(instance_dir, "web_analytics.db"))
 
 
 config_by_name = {

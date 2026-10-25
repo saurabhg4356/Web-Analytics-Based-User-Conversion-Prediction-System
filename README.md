@@ -5,7 +5,7 @@
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.9.1-orange.svg)](https://scikit-learn.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-SQLAlchemy%202.0-lightblue.svg)](https://www.sqlite.org/)
 [![Bootstrap 5](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)](https://getbootstrap.com/)
-[![Tests](https://img.shields.io/badge/Tests-26%20Passed%20(100%25)-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-42%20Passed%20(100%25)-brightgreen.svg)]()
 
 A complete, production-grade web application and machine learning classification platform designed to analyze e-commerce website visitor session behavior and estimate the calibrated probability that an active browsing session will result in a purchase (`Revenue = True`).
 
@@ -173,19 +173,20 @@ All candidate models were trained on 80% of the deduplicated data (9,764 session
 
 | Model | Test Accuracy | Test Precision | Test Recall | Test F1 | Test ROC-AUC | Test PR-AUC | Brier Loss |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Random Forest (Champion)** | 78.41% | 29.27% | **68.59%** | **0.4103** | **0.7808** | **0.3577** | 0.1432 |
-| **HistGradientBoosting** | 80.54% | 31.90% | 62.30% | 0.4220 | 0.7817 | 0.3634 | 0.1387 |
-| **Logistic Regression** | 76.57% | 27.89% | 78.27% | 0.4113 | 0.7555 | 0.3310 | 0.1762 |
+| **Random Forest (Champion)** | **69.15%** | 29.27% | **68.59%** | **0.4103** | **0.7808** | **0.3577** | 0.1776 |
+| **HistGradientBoosting** | 73.29% | **31.90%** | 62.30% | 0.4220 | 0.7817 | 0.3634 | 0.1640 |
+| **Logistic Regression** | 64.93% | 27.89% | 78.27% | 0.4113 | 0.7555 | 0.3310 | 0.2096 |
 
 ### Hold-Out Test Confusion Matrix (Random Forest at 0.50 Threshold)
 
 ```
                          Predicted: No Purchase (0)    Predicted: Purchase (1)
-Actual: No Purchase (0)             1,652 (TN)                   407 (FP)
+Actual: No Purchase (0)             1,426 (TN)                   633 (FP)
 Actual: Purchase (1)                  120 (FN)                   262 (TP)
 ```
-- **True Positives (262):** Correctly identified 68.6% of all buyers on unseen test data without using leaky features.
-- **False Positives (407):** Visitors flagged as potential buyers who did not purchase (acceptable trade-off when offering soft assistance or retargeting).
+- **True Positives (262):** Correctly identified 68.59% (262 / 382) of all purchasing sessions on unseen test data without using leaky features.
+- **False Positives (633):** Visitors flagged as potential buyers who did not purchase (an expected trade-off of balanced class weighting that avoids costly missed sales).
+- **True Negatives (1,426) & False Negatives (120):** Overall hold-out test accuracy is 69.15% ((1,426 + 262) / 2,441).
 
 ### Top 8 Behavioral Feature Importances (Tree Impurity)
 1. **ExitRates (18.23%):** Single strongest behavioral hazard. Sessions where users exit pages rapidly rarely convert.
@@ -415,38 +416,86 @@ Visit: **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
 ## 12. Automated Testing
 
-Run the complete 26-test automated verification suite:
+Run the complete 42-test automated verification suite:
 ```powershell
 .venv\Scripts\python.exe -m pytest -v
 ```
 
-### Test Coverage Highlights:
-- **Routes (`tests/test_routes.py`):** Landing page, health check, dashboard route, async analytics API, diagnostics, data explorer, and 404 error page.
-- **Inference (`tests/test_prediction.py`):** Model inference, probability range constraints (0.0 to 1.0), database persistence, REST API valid responses, and malformed request rejection (400/422).
-- **Validation (`tests/test_validation.py`):** Negative durations, invalid bounce/exit rate bounds (> 1.0), decision threshold range checks.
-- **Ledger & Security (`tests/test_history.py`):** Pagination, outcome updating, search filtering, and spreadsheet formula injection sanitization.
-- **Pipeline Integrity (`tests/test_model_pipeline.py`):** Target leakage guard ensuring `PageValues` is absent from feature schema, joblib artifact loading, output dimensions, and JSON metrics structure.
+### Test Coverage Highlights (42 Passed / 100% Pass Rate):
+- **Data Explorer Regression Suite (`tests/test_data_explorer.py`):**
+  - Independent filtering across visitor type, month, and revenue status.
+  - Combined multi-attribute filtering.
+  - Graceful handling of zero-match filter combinations without crashing.
+  - Safe handling of unrecognized or malformed filter parameters.
+  - Filtered CSV download validation.
+- **Inference & Hardened Validation (`tests/test_prediction.py`):**
+  - Valid prediction generation, probability range constraints (0.0 to 1.0), and database persistence.
+  - Rejection of missing required feature columns (422).
+  - Rejection of non-finite numbers (NaN, +inf, -inf) (422).
+  - Rejection of negative durations and page counts (422).
+  - Rejection of out-of-bounds rates (422).
+  - Rejection of unsupported categorical labels (422).
+  - Rejection of invalid decision thresholds without silent clamping (422).
+  - Rejection of non-JSON Content-Type (415) and empty/malformed payloads (400).
+  - Controlled error responses when model artifacts are missing (503) without exposing tracebacks.
+- **Ledger & CSV Sanitization (`tests/test_history.py`):**
+  - Empty history state, pagination, and search filtering.
+  - Ground-truth outcome auditing.
+  - Spreadsheet formula injection escaping (`=`, `+`, `-`, `@`).
+- **Pipeline Integrity (`tests/test_model_pipeline.py`):**
+  - Verification that `PageValues` is strictly absent from feature inputs.
+  - Preprocessor and classifier pipeline loading.
+  - Consistency of `model_metrics.json` schema.
+- **Application & Status Codes (`tests/test_routes.py`):**
+  - Health check endpoint (`/health`), overview (`/`), dashboard (`/dashboard`), diagnostics (`/evaluation`), and custom 404 handler.
 
 ---
 
-## 13. Production Deployment Guide
+## 13. Production Deployment Guide (Render & WSGI)
 
-### Deployment Options
-1. **Windows Production (Waitress):**
-   ```powershell
-   python wsgi.py
-   ```
-   Starts a production-grade multi-threaded WSGI server on port 8080.
-2. **Linux / Container Production (Gunicorn):**
-   ```bash
-   gunicorn --bind 0.0.0.0:8000 --workers 4 "wsgi:app"
-   ```
+### A. Deploying to Render via Blueprint (`render.yaml`)
+This repository includes a pre-configured `render.yaml` specification for zero-configuration Render deployment:
+1. Fork or push this repository to your GitHub account: `https://github.com/saurabhg4356/Web-Analytics-Based-User-Conversion-Prediction-System`.
+2. Log into [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** $\rightarrow$ **Blueprint**.
+4. Connect your GitHub repository. Render will automatically parse `render.yaml` and configure:
+   - **Environment:** Python 3
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn wsgi:app`
+   - **Health Check Path:** `/health`
+   - **Environment Variables:** `FLASK_ENV=production`, `SECRET_KEY` (auto-generated).
+5. Click **Apply** to deploy.
 
-### Storage & Persistence Notice
-SQLite is ideal for local development, demos, and single-instance servers. If deploying to cloud platforms with ephemeral filesystems (e.g., Heroku, AWS Elastic Beanstalk multi-container), configure PostgreSQL by setting the `DATABASE_URL` environment variable:
-```bash
-DATABASE_URL=postgresql://username:password@db-host:5432/web_analytics
-```
+### B. Manual Web Service Setup on Render
+If configuring manually without Blueprints:
+- **Environment:** `Python 3`
+- **Region:** `Oregon (US West)` or preferred region
+- **Branch:** `main`
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `gunicorn wsgi:app`
+- **Environment Variables:**
+  - `FLASK_ENV` = `production`
+  - `SECRET_KEY` = *(generate a secure random 32-character string)*
+  - `DEFAULT_DECISION_THRESHOLD` = `0.40`
+
+### C. Local WSGI Execution
+- **Windows Production (Waitress):**
+  ```powershell
+  python wsgi.py
+  ```
+- **Linux / Docker Production (Gunicorn):**
+  ```bash
+  gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 4 "wsgi:app"
+  ```
+
+### D. SQLite Persistence & Free-Tier Notice
+- **Local Development:** The application uses SQLite located at `instance/web_analytics.db`.
+- **Render Free Tier Storage:** Render free web services utilize an **ephemeral disk**. This means the database is initialized automatically on startup, but stored predictions in SQLite will reset whenever the free container spins down after inactivity or when a new deployment is triggered.
+- **Persistent Cloud Database (Optional):** To retain prediction history permanently across redeployments on Render, provision a free **Render PostgreSQL** database and paste the connection string into the `DATABASE_URL` environment variable:
+  ```bash
+  DATABASE_URL=postgresql://username:password@hostname:5432/web_analytics
+  ```
+  The application automatically detects and normalizes `postgresql://` connection strings in production.
 
 ---
 

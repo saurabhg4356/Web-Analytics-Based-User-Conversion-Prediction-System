@@ -25,23 +25,36 @@ def data_explorer():
 
     df = AnalyticsService.get_dataset()
 
-    # Filter dataframe
+    # Filter dataframe safely and independently
     filtered_df = df.copy()
-    if month_filter != "all":
-        filtered_df = filtered_df[filtered_df["Month"].str.lower() == month_filter.lower()]
-    if visitor_filter != "all":
+
+    # Month filter
+    if month_filter and month_filter.lower() != "all":
+        valid_months = [m.lower() for m in ["Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]]
+        if month_filter.lower() in valid_months:
+            filtered_df = filtered_df[filtered_df["Month"].str.lower() == month_filter.lower()]
+
+    # Revenue filter (must be independent of visitor_filter)
+    if revenue_filter and revenue_filter.lower() in ("true", "false"):
         is_rev = revenue_filter.lower() == "true"
         filtered_df = filtered_df[filtered_df["Revenue"] == is_rev]
-    if visitor_filter != "all":
-        filtered_df = filtered_df[filtered_df["VisitorType"].str.lower() == visitor_filter.lower()]
+
+    # Visitor type filter (must be independent of revenue_filter)
+    if visitor_filter and visitor_filter.lower() != "all":
+        valid_visitors = [v.lower() for v in ["Returning_Visitor", "New_Visitor", "Other"]]
+        if visitor_filter.lower() in valid_visitors:
+            filtered_df = filtered_df[filtered_df["VisitorType"].str.lower() == visitor_filter.lower()]
 
     total_filtered_rows = len(filtered_df)
     total_pages = max(1, (total_filtered_rows + per_page - 1) // per_page)
     page = max(1, min(page, total_pages))
 
-    start_idx = (page - 1) * per_page
-    end_idx = start_idx + per_page
-    page_records = filtered_df.iloc[start_idx:end_idx].to_dict(orient="records")
+    if total_filtered_rows > 0:
+        start_idx = (page - 1) * per_page
+        end_idx = min(start_idx + per_page, total_filtered_rows)
+        page_records = filtered_df.iloc[start_idx:end_idx].to_dict(orient="records")
+    else:
+        page_records = []
 
     # Column descriptions metadata
     columns_info = [
@@ -81,17 +94,25 @@ def data_explorer():
 
 @data_explorer_bp.route("/data-explorer/download")
 def download_sample_csv():
-    """Allows downloading the dataset (first 1000 rows or filtered slice)."""
-    df = AnalyticsService.get_dataset()
+    """Allows downloading the dataset (first 2000 rows or filtered slice)."""
+    df = AnalyticsService.get_dataset().copy()
     month_filter = request.args.get("month", "all")
-    if month_filter != "all":
+    revenue_filter = request.args.get("revenue", "all")
+    visitor_filter = request.args.get("visitor_type", "all")
+
+    if month_filter and month_filter.lower() != "all":
         df = df[df["Month"].str.lower() == month_filter.lower()]
+    if revenue_filter and revenue_filter.lower() in ("true", "false"):
+        is_rev = revenue_filter.lower() == "true"
+        df = df[df["Revenue"] == is_rev]
+    if visitor_filter and visitor_filter.lower() != "all":
+        df = df[df["VisitorType"].str.lower() == visitor_filter.lower()]
 
     output = io.StringIO()
     df.head(2000).to_csv(output, index=False)
     output.seek(0)
 
-    filename = f"uci_online_shoppers_sample_{month_filter}.csv"
+    filename = f"uci_online_shoppers_sample_{month_filter}_{revenue_filter}_{visitor_filter}.csv"
     return Response(
         output.getvalue(),
         mimetype="text/csv",

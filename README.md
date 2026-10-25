@@ -473,8 +473,14 @@ If configuring manually without Blueprints:
 - **Branch:** `main`
 - **Build Command:** `pip install -r requirements.txt`
 - **Start Command:** `gunicorn wsgi:app`
+
+> [!IMPORTANT]
+> **Avoid the "unicorn: command not found" Typo:**
+> If you encounter `bash: line 1: unicorn: command not found (exit code 127)`, check your service's **Settings $\rightarrow$ Start Command** on the Render dashboard. Make sure it is spelled `gunicorn wsgi:app` (with a leading `g`), not `unicorn wsgi:app`. Render provides automatic port binding via `gunicorn.conf.py` or the `Procfile`.
+
 - **Environment Variables:**
   - `FLASK_ENV` = `production`
+  - `FLASK_CONFIG` = `production`
   - `SECRET_KEY` = *(generate a secure random 32-character string)*
   - `DEFAULT_DECISION_THRESHOLD` = `0.40`
 

@@ -20,7 +20,8 @@ from app.routes import (
 def create_app(config_name: str = None) -> Flask:
     """Application factory for Web Analytics User Conversion Prediction System."""
     if config_name is None:
-        config_name = os.environ.get("FLASK_ENV", "development").lower()
+        raw_env = os.environ.get("FLASK_CONFIG") or os.environ.get("FLASK_ENV") or "development"
+        config_name = raw_env.lower()
 
     app = Flask(__name__)
     config_class = config_by_name.get(config_name, config_by_name["default"])

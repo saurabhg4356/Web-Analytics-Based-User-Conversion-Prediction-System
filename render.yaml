@@ -14,6 +14,8 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: FLASK_CONFIG
+        value: production
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
